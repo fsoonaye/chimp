@@ -1,0 +1,12 @@
+.vscode/
+bin/
+*.o
+
+*.app
+.DS_Store
+*.dSYM/
+._*
+
+*.cs
+
+*.pgn
