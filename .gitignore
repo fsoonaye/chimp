@@ -1,0 +1,7 @@
+.vscode/
+
+*.o
+*.app
+.DS_Store
+*.dSYM/
+._*
