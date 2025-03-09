@@ -1,7 +1,18 @@
 .vscode/
 
-*.o
-*.app
+
+# Ignore macOS weird files
 .DS_Store
 *.dSYM/
 ._*
+
+# Ignore compiled binaries
+*.out
+*.exe
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.dylib
+*.app
