@@ -113,6 +113,8 @@ void UCIEngine::loop() {
         {
             std::cout << "id name CHIMP\n";
             std::cout << "id author Florian\n";
+            std::cout << "option name Hash type spin default 1 min 1 max 1\n";
+            std::cout << "option name Threads type spin default 1 min 1 max 1\n";
             std::cout << "uciok\n";
         }
         else if (input == "isready")
