@@ -1,6 +1,4 @@
-// search.cpp
-
-#include "engine.h"
+#include "perft.h"
 
 std::uint64_t perft(Board& board, int depth) {
     Movelist moves;
@@ -22,7 +20,7 @@ std::uint64_t perft(Board& board, int depth) {
     return nodes;
 }
 
-void start_perft(const std::string& fen, int depth) {
+uint64_t start_perft(const std::string& fen, int depth) {
     Board    board = Board::fromFen(fen);
     auto     t0    = std::chrono::high_resolution_clock::now();
     uint64_t nodes = perft(board, depth);
@@ -31,4 +29,6 @@ void start_perft(const std::string& fen, int depth) {
     uint64_t nps   = (nodes * 1000) / (ms + 1);
     std::cout << "\ntime: " << ms << "ms" << std::endl;
     std::cout << "Nodes:" << nodes << " nps " << nps << std::endl;
+
+    return nodes;
 }
