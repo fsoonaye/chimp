@@ -1,8 +1,10 @@
 // uci.cpp
 
+#include <algorithm>
 #include "uci.h"
 #include "engine.h"
-#include <algorithm>
+#include "types.h"
+#include "perft.h"
 
 void UCIEngine::position(std::istringstream& is) {
     std::string token, fen;
@@ -28,10 +30,10 @@ void UCIEngine::position(std::istringstream& is) {
 
 void UCIEngine::go(std::istringstream& iss) {
     std::string token;
-    int         depth    = engine.MAX_PLY;
+    int         depth    = MAX_DEPTH;
     int         movetime = 0;
 
-    engine.limit = Limits();
+    engine.limits = Limits();
 
     // Parse search parameters
     while (iss >> token)
@@ -45,57 +47,26 @@ void UCIEngine::go(std::istringstream& iss) {
         if (token == "depth")
             iss >> depth;
         else if (token == "movestogo")
-            iss >> engine.limit.movestogo;
+            iss >> engine.limits.movestogo;
         else if (token == "movetime")
             iss >> movetime;
         else if (token == "wtime")
-            iss >> engine.limit.wtime;
+            iss >> engine.limits.wtime;
         else if (token == "btime")
-            iss >> engine.limit.btime;
+            iss >> engine.limits.btime;
         else if (token == "winc")
-            iss >> engine.limit.winc;
+            iss >> engine.limits.winc;
         else if (token == "binc")
-            iss >> engine.limit.binc;
+            iss >> engine.limits.binc;
         else if (token == "infinite")
-            engine.limit.isInfinite = true;
+            engine.limits.isInfinite = true;
         else if (token == "nodes")
-            iss >> engine.limit.nodes;
+            iss >> engine.limits.nodes;
     }
 
-    // Set time constraints
-    if (movetime > 0)
-    {
-        engine.limit.time.maximum = movetime;
-        engine.limit.time.optimum = movetime * 0.95;
-    }
-    else
-    {
-        int time =
-          engine.board.sideToMove() == Color::WHITE ? engine.limit.wtime : engine.limit.btime;
-        int inc = engine.board.sideToMove() == Color::WHITE ? engine.limit.winc : engine.limit.binc;
 
-        if (time > 0)
-        {
-            int movestogo = engine.limit.movestogo;
-            if (movestogo <= 0)
-                movestogo = 25;  // Estimate if not provided
-
-            // Allocate time with safety margin
-            int baseTime    = time / movestogo;
-            int incTime     = inc > 100 ? inc - 100 : inc;
-            int timeForMove = baseTime + incTime;
-
-            // Use 1/20th of remaining time as upper bound
-            timeForMove = std::min(timeForMove, time / 20);
-
-            // Ensure minimum time usage
-            engine.limit.time.maximum = std::max(timeForMove - 50, 50);
-            engine.limit.time.optimum = engine.limit.time.maximum * 0.8;
-        }
-    }
-
-    auto bestMove = engine.get_bestmove(depth);
-    std::cout << "bestmove " << uci::moveToUci(bestMove) << std::endl;
+    auto bestmove = engine.get_bestmove(depth);
+    std::cout << "bestmove " << uci::moveToUci(bestmove) << std::endl;
 }
 
 void UCIEngine::loop() {

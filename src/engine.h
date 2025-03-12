@@ -6,20 +6,29 @@ using namespace chess;
 
 class Engine {
    public:
-    Move get_bestmove(int depth);
+    Move get_randommove();
+    Move get_bestmove(int depth = MAX_DEPTH);
+    Move iterative_deepening(int max_depth);
+    int  negamax(int depth);
+
+    bool time_is_up();
 
     void reset() {
         board = Board::fromFen(constants::STARTPOS);
         nodes = 0;
     }
 
-    int MAX_PLY = 64;
-    int nodes   = 0;
+    int64_t get_elapsedtime() const {
+        auto currtime = std::__1::chrono::high_resolution_clock::now();
+        return std::chrono::duration_cast<std::chrono::milliseconds>(currtime - starttime).count();
+    }
+
+
+    int nodes = 0;
 
     Board board;
 
-    Limits limit;
-};
+    Limits limits;
 
-std::uint64_t perft(Board& board, int depth);
-void          start_perft(const std::string& fen, int depth);
+    std::__1::chrono::high_resolution_clock::time_point starttime;
+};
