@@ -34,7 +34,7 @@ int bench::run(int depth) {
 
     auto nps = signed((nodes / (elapsed + 1)) * 1000);
 
-    std::cout << "info string " << elapsed / 1000.0 << " seconds" << std::endl;
+    std::cout << std::endl << "info string " << elapsed / 1000.0 << " seconds" << std::endl;
     std::cout << "\n" << nodes << " nodes " << nps << " nps" << std::endl;
 
     return 0;
