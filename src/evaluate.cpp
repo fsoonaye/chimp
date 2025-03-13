@@ -15,5 +15,5 @@ int evaluate(Board board) {
         materialScore += ptValues[static_cast<int>(type)] * (whitePieces - blackPieces);
     }
 
-    return board.sideToMove() == Color::WHITE ? materialScore : -materialScore;
+    return materialScore;
 }
