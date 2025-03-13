@@ -1,6 +1,7 @@
 #pragma once
 #include "../include/chess.hpp"
 #include "types.h"
+#include "hash.h"
 
 using namespace chess;
 
@@ -9,7 +10,7 @@ class Engine {
     Move get_randommove();
     Move get_bestmove(int depth = MAX_DEPTH);
     Move iterative_deepening(int max_depth);
-    int  absearch(int alpha, int beta, int depth);
+    int  absearch(int alpha, int beta, int depth, int ply);
 
     bool time_is_up();
 
@@ -31,4 +32,6 @@ class Engine {
     Limits limits;
 
     std::__1::chrono::high_resolution_clock::time_point starttime;
+
+    TranspositionTable tt{};
 };
