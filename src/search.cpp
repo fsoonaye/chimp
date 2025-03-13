@@ -28,7 +28,7 @@ Move Engine::get_bestmove(int depth) {
 }
 
 
-int Engine::negamax(int depth) {
+int Engine::absearch(int alpha, int beta, int depth) {
     nodes++;
 
     if (time_is_up())
@@ -36,6 +36,9 @@ int Engine::negamax(int depth) {
 
     if (depth == 0)
         return evaluate(board);
+
+    if (board.isRepetition() || board.isHalfMoveDraw())
+        return 0;
 
     int bestvalue = -VALUE_INF;
 
@@ -45,11 +48,19 @@ int Engine::negamax(int depth) {
     for (const auto& move : moves)
     {
         board.makeMove(move);
-        int value = -negamax(depth - 1);
+        int value = -absearch(-beta, -alpha, depth - 1);
         board.unmakeMove(move);
 
         if (value > bestvalue)
+        {
             bestvalue = value;
+
+            if (value > alpha)
+                alpha = value;
+        }
+
+        if (value >= beta)
+            return bestvalue;
     }
 
     return bestvalue;
@@ -73,7 +84,7 @@ Move Engine::iterative_deepening(int max_depth) {
         for (const auto& move : moves)
         {
             board.makeMove(move);
-            int value = -negamax(depth - 1);
+            int value = -absearch(-VALUE_INF, VALUE_INF, depth - 1);
             board.unmakeMove(move);
 
             if (value > bestvalue)
