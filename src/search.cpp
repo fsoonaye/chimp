@@ -22,7 +22,7 @@ Move Engine::get_bestmove(int depth) {
     int64_t inc            = board.sideToMove() == Color::WHITE ? limits.winc : limits.binc;
 
     if (available_time > 0)
-        limits.time = calculate_time(available_time, inc, limits.movestogo);
+        limits.time = calculate_move_time(available_time, inc, limits.movestogo);
 
     return iterative_deepening(depth);
 }
@@ -116,6 +116,8 @@ Move Engine::iterative_deepening(int max_depth) {
         }
 
         bestmove = curr_bestmove;
+
+        print_search_info(depth, bestvalue, nodes, get_elapsedtime());
 
         if (time_is_up())
             break;
