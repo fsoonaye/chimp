@@ -21,13 +21,13 @@ std::uint64_t perft(Board& board, int depth) {
 }
 
 uint64_t start_perft(const std::string& fen, int depth) {
-    Board    board = Board::fromFen(fen);
-    auto     t0    = std::chrono::high_resolution_clock::now();
-    uint64_t nodes = perft(board, depth);
-    auto     t1    = std::chrono::high_resolution_clock::now();
-    auto     ms    = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
-    uint64_t nps   = (nodes * 1000) / (ms + 1);
-    std::cout << "\ntime: " << ms << "ms" << std::endl;
+    Board    board   = Board::fromFen(fen);
+    auto     t0      = std::chrono::high_resolution_clock::now();
+    uint64_t nodes   = perft(board, depth);
+    auto     t1      = std::chrono::high_resolution_clock::now();
+    auto     elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+    uint64_t nps     = (nodes * 1000) / (elapsed + 1);
+    std::cout << "\ntime: " << elapsed << "ms" << std::endl;
     std::cout << "Nodes:" << nodes << " nps " << nps << std::endl;
 
     return nodes;
