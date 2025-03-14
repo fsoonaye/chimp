@@ -9,7 +9,7 @@ class Engine {
     Move get_randommove();
     Move get_bestmove(int depth = MAX_DEPTH);
     Move iterative_deepening(int max_depth);
-    int  negamax(int depth);
+    int  absearch(int alpha, int beta, int depth);
 
     bool time_is_up();
 
