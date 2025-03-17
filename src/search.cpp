@@ -22,13 +22,13 @@ Move Engine::get_bestmove(int depth) {
     int64_t inc            = board.sideToMove() == Color::WHITE ? limits.winc : limits.binc;
 
     if (available_time > 0)
-        limits.time = calculate_time(available_time, inc, limits.movestogo);
+        limits.time = calculate_move_time(available_time, inc, limits.movestogo);
 
     return iterative_deepening(depth);
 }
 
 
-int Engine::absearch(int alpha, int beta, int depth) {
+int Engine::absearch(int alpha, int beta, int depth, int ply) {
     nodes++;
 
     if (time_is_up())
@@ -37,23 +37,38 @@ int Engine::absearch(int alpha, int beta, int depth) {
     if (depth == 0)
         return evaluate(board);
 
+    // draw detection
     if (board.isRepetition() || board.isHalfMoveDraw())
         return 0;
 
-    int bestvalue = -VALUE_INF;
+    // probing TT
+    uint64_t poskey = board.hash();
+    Move     ttmove = Move::NO_MOVE;
+    bool     tthit  = false;
+    TTEntry* tte    = tt.probe(poskey, ttmove, tthit);
 
+    // TT cutoff
+    if (tthit && tte->depth >= depth)
+        return tte->score;
+
+    // initializing variables
+    int  bestvalue = -VALUE_INF;
+    Move bestmove  = Move::NO_MOVE;
+
+    // generating legal moves
     Movelist moves;
     movegen::legalmoves(moves, board);
 
     for (const auto& move : moves)
     {
         board.makeMove(move);
-        int value = -absearch(-beta, -alpha, depth - 1);
+        int value = -absearch(-beta, -alpha, depth - 1, ply + 1);
         board.unmakeMove(move);
 
         if (value > bestvalue)
         {
             bestvalue = value;
+            bestmove  = move;
 
             if (value > alpha)
                 alpha = value;
@@ -62,6 +77,12 @@ int Engine::absearch(int alpha, int beta, int depth) {
         if (value >= beta)
             return bestvalue;
     }
+
+    // if no legal moves are generated, it is either a loss or a draw
+    if (moves.empty())
+        return board.inCheck() ? -VALUE_INF + ply : 0;
+
+    tt.store(poskey, depth, bestvalue, bestmove);
 
     return bestvalue;
 }
@@ -84,7 +105,7 @@ Move Engine::iterative_deepening(int max_depth) {
         for (const auto& move : moves)
         {
             board.makeMove(move);
-            int value = -absearch(-VALUE_INF, VALUE_INF, depth - 1);
+            int value = -absearch(-VALUE_INF, VALUE_INF, depth - 1, 1);
             board.unmakeMove(move);
 
             if (value > bestvalue)
@@ -95,6 +116,8 @@ Move Engine::iterative_deepening(int max_depth) {
         }
 
         bestmove = curr_bestmove;
+
+        print_search_info(depth, bestvalue, nodes, get_elapsedtime());
 
         if (time_is_up())
             break;
