@@ -1,6 +1,6 @@
 #pragma once
 #include "../include/chess.hpp"
-#include "pst.h"
+#include "arrays.h"
 
 using namespace chess;
 
