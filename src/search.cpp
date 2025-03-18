@@ -35,7 +35,7 @@ int Engine::absearch(int alpha, int beta, int depth, int ply) {
         return 0;
 
     if (depth == 0)
-        return evaluate(board);
+        return pesto_eval(board);
 
     // draw detection
     if (board.isRepetition() || board.isHalfMoveDraw())
