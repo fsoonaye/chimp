@@ -1,5 +1,6 @@
 .vscode/
 
+engine
 
 # Ignore macOS weird files
 .DS_Store

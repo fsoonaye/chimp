@@ -4,7 +4,7 @@ LDFLAGS :=
 
 # Source and header files
 SRC := src/main.cpp src/perft.cpp src/search.cpp src/uci.cpp src/evaluate.cpp src/time.cpp src/bench.cpp src/hash.cpp
-HEADERS := include/chess.hpp src/engine.h src/types.h src/uci.h src/evaluate.h src/bench.h src/time.h src/perft.h src/hash.h
+HEADERS := include/chess.hpp src/engine.h src/types.h src/uci.h src/evaluate.h src/bench.h src/time.h src/perft.h src/hash.h src/pst.h
 
 # Default executable name
 EXE ?= engine

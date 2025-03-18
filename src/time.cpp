@@ -15,8 +15,7 @@ Time calculate_move_time(int64_t available_time, int inc, int movestogo) {
     if (tournament_mode)
         time.optimum = std::min(available_time * 0.5, total * 0.9 / mtg);
 
-    else
-        // No movestogo specified (increment-only mode)
+    else  // No movestogo specified (increment-only mode)
         time.optimum = (total / 20);
 
     // Safety check for very low time
