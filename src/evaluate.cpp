@@ -49,7 +49,10 @@ int pesto_eval(Board board) {
         }
     }
 
+    // 24 corresponds to a full set of pieces on both sides without promotions
     game_phase = std::min(game_phase, 24);
 
-    return (mg_score * game_phase + eg_score * (24 - game_phase)) / 24;
+    int eval = (mg_score * game_phase + eg_score * (24 - game_phase)) / 24;
+
+    return (board.sideToMove() == Color::WHITE) ? eval : -eval;
 }
