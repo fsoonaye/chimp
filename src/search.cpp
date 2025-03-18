@@ -111,7 +111,9 @@ Move Engine::iterative_deepening(int max_depth) {
 
         // TT cutoff
         if (tthit && tte->depth >= depth)
-            return tte->score;
+        {
+            return tte->move;
+        }
 
         Movelist moves;
         movegen::legalmoves(moves, board);
