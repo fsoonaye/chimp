@@ -1,5 +1,6 @@
 #include "../include/chess.hpp"
 #include "engine.h"
+#include "movepicker.h"
 #include "evaluate.h"
 #include "time.h"
 
@@ -54,12 +55,14 @@ int Engine::absearch(int alpha, int beta, int depth, int ply) {
     // initializing variables
     int  bestvalue = -VALUE_INF;
     Move bestmove  = Move::NO_MOVE;
+    Move move      = Move::NO_MOVE;
 
     // generating legal moves
     Movelist moves;
     movegen::legalmoves(moves, board);
+    MovePicker mp(*this, moves, ttmove);
 
-    for (const auto& move : moves)
+    while ((move = mp.next_move()) != Move::NO_MOVE)
     {
         board.makeMove(move);
         int value = -absearch(-beta, -alpha, depth - 1, ply + 1);
@@ -96,13 +99,25 @@ Move Engine::iterative_deepening(int max_depth) {
 
     for (int depth = 1; depth <= max_depth; depth++)
     {
-        Move curr_bestmove = Move::NO_MOVE;
         int  bestvalue     = -VALUE_INF;
+        Move curr_bestmove = Move::NO_MOVE;
+        Move move          = Move::NO_MOVE;
+
+        // probing TT
+        uint64_t poskey = board.hash();
+        Move     ttmove = Move::NO_MOVE;
+        bool     tthit  = false;
+        TTEntry* tte    = tt.probe(poskey, ttmove, tthit);
+
+        // TT cutoff
+        if (tthit && tte->depth >= depth)
+            return tte->score;
 
         Movelist moves;
         movegen::legalmoves(moves, board);
+        MovePicker mp(*this, moves, ttmove);
 
-        for (const auto& move : moves)
+        while ((move = mp.next_move()) != Move::NO_MOVE)
         {
             board.makeMove(move);
             int value = -absearch(-VALUE_INF, VALUE_INF, depth - 1, 1);
