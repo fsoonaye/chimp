@@ -4,7 +4,7 @@
 
 namespace bench {
 
-int run(int depth = 6);
+int run(int depth = 2);
 
 // fens from Stormphrax, ultimately from bitgenie
 static const std::array benchfens{
