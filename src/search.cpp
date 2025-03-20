@@ -145,9 +145,6 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
     if (ply >= MAX_DEPTH)
         return evaluate(board);
 
-    if (depth == 0)
-        return evaluate(board);
-
     // draw detection
     if (board.isRepetition() || board.isHalfMoveDraw())
         return 0;
@@ -164,8 +161,11 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
 
     // initializing variables
     // prematurily evaluating the board to check if we're out of bounds or in need to update alpha
-    int bestvalue = evaluate(board);
-
+    int bestscore = evaluate(board);
+    if (bestscore >= beta)
+        return bestscore;
+    if (bestscore > alpha)
+        alpha = bestscore;
 
     Move bestmove = Move::NO_MOVE;
     Move move     = Move::NO_MOVE;
@@ -178,27 +178,27 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
         board.makeMove(move);
-        int value = -absearch(-beta, -alpha, depth - 1, ply + 1);
+        int score = -absearch(-beta, -alpha, depth - 1, ply + 1);
         board.unmakeMove(move);
 
-        if (value > bestvalue)
+        if (score > bestscore)
         {
-            bestvalue = value;
+            bestscore = score;
             bestmove  = move;
 
-            if (value > alpha)
-                alpha = value;
+            if (score > alpha)
+                alpha = score;
         }
 
-        if (value >= beta)
-            return bestvalue;
+        if (score >= beta)
+            return bestscore;
     }
 
     // if no legal moves are generated, it is either a loss or a draw
     if (moves.empty())
         return board.inCheck() ? -VALUE_INF + ply : 0;
 
-    tt.store(poskey, depth, bestvalue, bestmove);
+    tt.store(poskey, depth, bestscore, bestmove);
 
-    return bestvalue;
+    return bestscore;
 }
