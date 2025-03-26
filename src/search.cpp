@@ -110,7 +110,7 @@ int Engine::absearch(int alpha, int beta, int depth, int ply) {
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
         board.makeMove(move);
-        int value = -quiescence_search(-beta, -alpha, depth - 1, ply + 1);
+        int value = -absearch(-beta, -alpha, depth - 1, ply + 1);
         board.unmakeMove(move);
 
         if (value > bestvalue)
@@ -178,7 +178,7 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
         board.makeMove(move);
-        int score = -absearch(-beta, -alpha, depth - 1, ply + 1);
+        int score = -quiescence_search(-beta, -alpha, depth, ply + 1);
         board.unmakeMove(move);
 
         if (score > bestscore)
