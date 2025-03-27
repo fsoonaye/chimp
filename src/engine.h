@@ -2,6 +2,7 @@
 #include "../include/chess.hpp"
 #include "types.h"
 #include "hash.h"
+#include <chrono>
 
 using namespace chess;
 
@@ -30,7 +31,7 @@ class Engine {
     }
 
     int64_t get_elapsedtime() const {
-        auto currtime = std::__1::chrono::high_resolution_clock::now();
+        auto currtime = std::chrono::high_resolution_clock::now();
         return std::chrono::duration_cast<std::chrono::milliseconds>(currtime - starttime).count();
     }
 
@@ -51,7 +52,7 @@ class Engine {
 
     Limits limits;
 
-    std::__1::chrono::high_resolution_clock::time_point starttime;
+    std::chrono::high_resolution_clock::time_point starttime;
 
     TranspositionTable tt{};
 };
