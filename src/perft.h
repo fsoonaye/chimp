@@ -1,5 +1,6 @@
 #pragma once
 #include "../include/chess.hpp"
+#include <chrono>
 
 using namespace chess;
 
