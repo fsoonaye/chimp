@@ -3,6 +3,7 @@
 #include "movepicker.h"
 #include "evaluate.h"
 #include "time.h"
+#include "see.h"
 
 #include <random>
 
@@ -177,6 +178,10 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
 
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
+        // SEE pruning
+        if (!board.inCheck() && SEE(board, move, 1))
+            continue;
+
         board.makeMove(move);
         int score = -quiescence_search(-beta, -alpha, depth, ply + 1);
         board.unmakeMove(move);
