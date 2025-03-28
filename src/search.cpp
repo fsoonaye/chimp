@@ -179,7 +179,7 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
         // SEE pruning
-        if (!board.inCheck() && SEE(board, move, 1))
+        if (!board.inCheck() && !SEE(board, move, 1))
             continue;
 
         board.makeMove(move);
