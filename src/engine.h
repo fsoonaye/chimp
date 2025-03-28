@@ -34,11 +34,15 @@ class Engine {
 
         int64_t elapsed = get_elapsedtime();
 
-        // Hard limit
-        if (elapsed >= limits.time.maximum)
+        // to handle bench properly
+        if (limits.time.maximum != 0)
         {
-            stop_search = true;
-            return true;
+            // Hard limit
+            if (elapsed >= limits.time.maximum)
+            {
+                stop_search = true;
+                return true;
+            }
         }
 
         return false;
