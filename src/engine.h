@@ -23,9 +23,16 @@ class Engine {
 
     // time functions
     bool time_is_up() {
+        // Checking if time is up every node is costly.
+        // Instead, we use this bitmask trick to check only every 2048 nodes
+        if ((nodes & 2047) != 2047)
+            return false;
+
         int64_t elapsed = get_elapsedtime();
-        if (limits.time.optimum != 0)
-            return elapsed >= limits.time.optimum;
+
+        // Hard limit
+        if (elapsed >= limits.time.maximum)
+            return true;
 
         return false;
     }
