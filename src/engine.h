@@ -16,15 +16,19 @@ class Engine {
 
     // reset function for ucinewgame
     void reset() {
-        board = Board::fromFen(constants::STARTPOS);
-        nodes = 0;
-        tt    = TranspositionTable();
+        board       = Board::fromFen(constants::STARTPOS);
+        nodes       = 0;
+        stop_search = false;
+        tt          = TranspositionTable();
     }
 
     // time functions
     bool time_is_up() {
-        // Checking if time is up every node is costly.
-        // Instead, we use this bitmask trick to check only every 2048 nodes
+        if (stop_search)
+            return true;
+
+        // Checking time every node is costly.
+        // Instead, we use this bitmask trick to check every 2048 nodes
         if ((nodes & 2047) != 2047)
             return false;
 
@@ -32,7 +36,10 @@ class Engine {
 
         // Hard limit
         if (elapsed >= limits.time.maximum)
+        {
+            stop_search = true;
             return true;
+        }
 
         return false;
     }
@@ -58,6 +65,8 @@ class Engine {
     Board board;
 
     Limits limits;
+
+    bool stop_search = false;
 
     std::chrono::high_resolution_clock::time_point starttime;
 

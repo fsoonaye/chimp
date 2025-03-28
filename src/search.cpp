@@ -17,16 +17,16 @@ Move Engine::get_bestmove(int depth) {
     if (available_time > 0)
         limits.time = calculate_move_time(available_time, inc, limits.movestogo);
 
+    starttime   = std::chrono::high_resolution_clock::now();
+    stop_search = false;
+    nodes       = 0;
+
     return iterative_deepening(depth);
 }
 
 
 Move Engine::iterative_deepening(int max_depth) {
     Move bestmove = Move::NO_MOVE;
-
-    nodes = 0;
-
-    starttime = std::chrono::high_resolution_clock::now();
 
     for (int depth = 1; depth <= max_depth; depth++)
     {
