@@ -19,7 +19,7 @@ class Engine {
         board       = Board::fromFen(constants::STARTPOS);
         nodes       = 0;
         stop_search = false;
-        tt          = TranspositionTable();
+        tt.clear();
     }
 
     // time functions
