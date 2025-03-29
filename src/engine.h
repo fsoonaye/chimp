@@ -54,13 +54,14 @@ class Engine {
     }
 
     // print functions
-    void print_search_info(int depth, int score, uint64_t nodes, int64_t time_ms) {
+    void print_search_info(int depth, int score, uint64_t nodes, int64_t time_ms, Move bm) {
         std::cout << "info";
         std::cout << " depth " << depth;
         std::cout << " score cp " << score;  // Centipawn score
         std::cout << " nodes " << nodes;
         std::cout << " time " << time_ms;
         std::cout << " nps " << (time_ms > 0 ? (nodes * 1000) / time_ms : 0);  // Nodes per second
+        std::cout << " bm " << bm;
         std::cout << std::endl;
     }
 
