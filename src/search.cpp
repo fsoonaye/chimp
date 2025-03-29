@@ -63,12 +63,12 @@ Move Engine::iterative_deepening(int max_depth) {
             }
         }
 
-        bestmove = curr_bestmove;
-
-        print_search_info(depth, bestvalue, nodes, get_elapsedtime());
-
         if (time_is_up())
             break;
+
+        bestmove = curr_bestmove;
+
+        print_search_info(depth, bestvalue, nodes, get_elapsedtime(), bestmove);
     }
 
     return bestmove;
