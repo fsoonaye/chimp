@@ -42,7 +42,7 @@ void UCIEngine::position(std::istringstream& is) {
 void UCIEngine::go(std::istringstream& iss) {
     std::string token;
 
-    int depth     = MAX_DEPTH;
+    int depth     = MAX_PLY;
     int mate      = 0;
     int movetime  = 0;
     int movestogo = 0;

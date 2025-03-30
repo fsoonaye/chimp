@@ -20,10 +20,10 @@ Move Engine::get_bestmove(int depth) {
 }
 
 
-Move Engine::iterative_deepening(int max_depth) {
+Move Engine::iterative_deepening(int MAX_PLY) {
     Move bestmove = Move::NO_MOVE;
 
-    for (int depth = 1; depth <= max_depth; depth++)
+    for (int depth = 1; depth <= MAX_PLY; depth++)
     {
         int  bestvalue     = -VALUE_INF;
         Move curr_bestmove = Move::NO_MOVE;
@@ -68,7 +68,7 @@ Move Engine::iterative_deepening(int max_depth) {
 }
 
 
-int Engine::absearch(int alpha, int beta, int depth, int ply) {
+int Engine::absearch(int alpha, int beta, int depth, int ply, bool is_pv) {
     nodes++;
 
     if (time_is_up())
@@ -142,7 +142,7 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
     if (time_is_up())
         return 0;
 
-    if (ply >= MAX_DEPTH)
+    if (ply >= MAX_PLY)
         return evaluate(board);
 
     // draw detection
