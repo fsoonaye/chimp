@@ -17,9 +17,4 @@ struct Limits {
     uint64_t nodes      = 0;
     int      depth      = MAX_DEPTH - 1;
     bool     isInfinite = false;
-    int      movestogo  = 0;
-    int64_t  wtime      = 0;
-    int64_t  btime      = 0;
-    int64_t  winc       = 0;
-    int64_t  binc       = 0;
 };
