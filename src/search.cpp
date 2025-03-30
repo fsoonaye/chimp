@@ -16,14 +16,6 @@ Move Engine::get_bestmove(int depth) {
     stop_search = false;
     nodes       = 0;
 
-    // Time limits
-    int64_t available_time = board.sideToMove() == Color::WHITE ? limits.wtime : limits.btime;
-    int64_t inc            = board.sideToMove() == Color::WHITE ? limits.winc : limits.binc;
-
-    if (available_time > 0)
-        limits.time = calculate_move_time(available_time, inc, limits.movestogo);
-
-
     return iterative_deepening(depth);
 }
 
@@ -130,13 +122,8 @@ int Engine::absearch(int alpha, int beta, int depth, int ply) {
                 alpha = score;
         }
 
-        if (alpha >= beta)
-        {
-            if (!board.isCapture(move) && (killers[ply] != move))
-                killers[ply] = move;
-
-            break;
-        }
+        if (score >= beta)
+            return bestscore;
     }
 
     // if no legal moves are generated, it is either a loss or a draw
@@ -208,7 +195,7 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
         }
 
         if (score >= beta)
-            break;
+            return bestscore;
     }
 
     // if no legal moves are generated, it is either a loss or a draw
