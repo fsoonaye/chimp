@@ -4,7 +4,7 @@
 
 using namespace chess;
 
-constexpr int MAX_DEPTH = 64;
+constexpr int MAX_PLY = 64;
 
 constexpr int VALUE_MATE        = 32000;
 constexpr int VALUE_MATE_IN_MAX = VALUE_MATE - 999;
@@ -23,6 +23,6 @@ struct Time {
 struct Limits {
     Time     time;
     uint64_t nodes      = 0;
-    int      depth      = MAX_DEPTH - 1;
+    int      depth      = MAX_PLY - 1;
     bool     isInfinite = false;
 };

@@ -9,9 +9,9 @@ using namespace chess;
 class Engine {
    public:
     // search functions
-    Move get_bestmove(int depth = MAX_DEPTH);
-    Move iterative_deepening(int max_depth);
-    int  absearch(int alpha, int beta, int depth, int ply);
+    Move get_bestmove(int depth = MAX_PLY);
+    Move iterative_deepening(int MAX_PLY);
+    int  absearch(int alpha, int beta, int depth, int ply, bool is_pv);
     int  quiescence_search(int alpha, int beta, int depth, int ply);
 
     // reset function for ucinewgame
@@ -53,6 +53,17 @@ class Engine {
         return std::chrono::duration_cast<std::chrono::milliseconds>(currtime - starttime).count();
     }
 
+    void init_pv_table() {
+        for (int i = 0; i < MAX_PLY; i++)
+        {
+            pv_length[i] = 0;
+            for (int j = 0; j < MAX_PLY; j++)
+            {
+                pv_table[i][j] = Move::NO_MOVE;
+            }
+        }
+    }
+
     // print functions
     void print_search_info(int depth, int score, uint64_t nodes, int64_t time_ms, Move bm) {
         std::string score_type;
@@ -79,6 +90,9 @@ class Engine {
         std::cout << " bm " << bm;
         std::cout << std::endl;
     }
+
+    Move pv_table[MAX_PLY][MAX_PLY];
+    int  pv_length[MAX_PLY];
 
     uint64_t nodes = 0;
 
