@@ -11,15 +11,18 @@ using namespace chess;
 
 
 Move Engine::get_bestmove(int depth) {
+    // Initializing variables
+    starttime   = std::chrono::high_resolution_clock::now();
+    stop_search = false;
+    nodes       = 0;
+
+    // Time limits
     int64_t available_time = board.sideToMove() == Color::WHITE ? limits.wtime : limits.btime;
     int64_t inc            = board.sideToMove() == Color::WHITE ? limits.winc : limits.binc;
 
     if (available_time > 0)
         limits.time = calculate_move_time(available_time, inc, limits.movestogo);
 
-    starttime   = std::chrono::high_resolution_clock::now();
-    stop_search = false;
-    nodes       = 0;
 
     return iterative_deepening(depth);
 }
@@ -42,9 +45,7 @@ Move Engine::iterative_deepening(int max_depth) {
 
         // TT cutoff
         if (tthit && tte->depth >= depth)
-        {
             return tte->move;
-        }
 
         Movelist moves;
         movegen::legalmoves(moves, board);
@@ -53,7 +54,7 @@ Move Engine::iterative_deepening(int max_depth) {
         while ((move = mp.next_move()) != Move::NO_MOVE)
         {
             board.makeMove(move);
-            int value = -absearch(-VALUE_INF, VALUE_INF, depth - 1, 1);
+            int value = -absearch(-VALUE_INF, VALUE_INF, depth, 1);
             board.unmakeMove(move);
 
             if (value > bestvalue)
@@ -129,7 +130,7 @@ int Engine::absearch(int alpha, int beta, int depth, int ply) {
 
     // if no legal moves are generated, it is either a loss or a draw
     if (moves.empty())
-        return board.inCheck() ? -VALUE_INF + ply : 0;
+        return board.inCheck() ? -VALUE_MATE + ply : 0;
 
     tt.store(poskey, depth, bestvalue, bestmove);
 
@@ -201,7 +202,7 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
 
     // if no legal moves are generated, it is either a loss or a draw
     if (moves.empty())
-        return board.inCheck() ? -VALUE_INF + ply : 0;
+        return board.inCheck() ? -VALUE_MATE + ply : 0;
 
     tt.store(poskey, depth, bestscore, bestmove);
 
