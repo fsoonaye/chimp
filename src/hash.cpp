@@ -26,7 +26,7 @@ TTEntry* TranspositionTable::probe(uint64_t key, Move& ttmove, bool& tt_hit) {
     return tte;
 }
 
-TranspositionTable::TranspositionTable() { allocateMB(16); }
+TranspositionTable::TranspositionTable() { allocateMB(64); }
 
 void TranspositionTable::allocate(uint64_t size) { table.resize(size, TTEntry()); }
 
