@@ -54,7 +54,7 @@ Move Engine::iterative_deepening(int max_depth) {
         while ((move = mp.next_move()) != Move::NO_MOVE)
         {
             board.makeMove(move);
-            int value = -absearch(-VALUE_INF, VALUE_INF, depth, 1);
+            int value = -absearch(-VALUE_INF, VALUE_INF, depth - 1, 1);
             board.unmakeMove(move);
 
             if (value > bestvalue)
