@@ -54,7 +54,7 @@ Move Engine::iterative_deepening(int max_depth) {
         while ((move = mp.next_move()) != Move::NO_MOVE)
         {
             board.makeMove(move);
-            int value = -absearch(-VALUE_INF, VALUE_INF, depth - 1, 1);
+            int value = -absearch(-VALUE_INF, VALUE_INF, depth, 1);
             board.unmakeMove(move);
 
             if (value > bestvalue)
@@ -89,6 +89,12 @@ int Engine::absearch(int alpha, int beta, int depth, int ply) {
     if (board.isRepetition() || board.isHalfMoveDraw())
         return 0;
 
+    // mate distance pruning
+    alpha = std::max(alpha, mated_in(ply));
+    beta  = std::min(beta, mate_in(ply + 1));
+    if (alpha >= beta)
+        return alpha;
+
     // probing TT
     uint64_t poskey = board.hash();
     Move     ttmove = Move::NO_MOVE;
@@ -100,7 +106,7 @@ int Engine::absearch(int alpha, int beta, int depth, int ply) {
         return tte->score;
 
     // initializing variables
-    int  bestvalue = -VALUE_INF;
+    int  bestscore = -VALUE_INF;
     Move bestmove  = Move::NO_MOVE;
     Move move      = Move::NO_MOVE;
 
@@ -112,29 +118,34 @@ int Engine::absearch(int alpha, int beta, int depth, int ply) {
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
         board.makeMove(move);
-        int value = -absearch(-beta, -alpha, depth - 1, ply + 1);
+        int score = -absearch(-beta, -alpha, depth - 1, ply + 1);
         board.unmakeMove(move);
 
-        if (value > bestvalue)
+        if (score > bestscore)
         {
-            bestvalue = value;
+            bestscore = score;
             bestmove  = move;
 
-            if (value > alpha)
-                alpha = value;
+            if (score > alpha)
+                alpha = score;
         }
 
-        if (value >= beta)
-            return bestvalue;
+        if (alpha >= beta)
+        {
+            if (!board.isCapture(move) && (killers[ply] != move))
+                killers[ply] = move;
+
+            break;
+        }
     }
 
     // if no legal moves are generated, it is either a loss or a draw
     if (moves.empty())
         return board.inCheck() ? -VALUE_MATE + ply : 0;
 
-    tt.store(poskey, depth, bestvalue, bestmove);
+    tt.store(poskey, depth, bestscore, bestmove);
 
-    return bestvalue;
+    return bestscore;
 }
 
 
@@ -197,7 +208,7 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
         }
 
         if (score >= beta)
-            return bestscore;
+            break;
     }
 
     // if no legal moves are generated, it is either a loss or a draw

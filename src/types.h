@@ -12,6 +12,8 @@ constexpr int VALUE_INF         = VALUE_MATE + 1;
 constexpr int VALUE_NONE        = VALUE_MATE + 2;
 
 inline bool is_mate(int score) { return std::abs(score) >= VALUE_MATE - MAX_DEPTH; }
+inline int  mate_in(int ply) { return VALUE_MATE - ply; }
+inline int  mated_in(int ply) { return ply - VALUE_MATE; }
 
 struct Time {
     int64_t optimum = 0;
@@ -23,9 +25,4 @@ struct Limits {
     uint64_t nodes      = 0;
     int      depth      = MAX_DEPTH - 1;
     bool     isInfinite = false;
-    int      movestogo  = 0;
-    int64_t  wtime      = 0;
-    int64_t  btime      = 0;
-    int64_t  winc       = 0;
-    int64_t  binc       = 0;
 };
