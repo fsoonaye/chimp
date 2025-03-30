@@ -28,7 +28,7 @@ class Engine {
             return true;
 
         // Checking time every node is costly.
-        // Instead, we use this bitmask trick to check every 2048 nodes
+        // Instead, I use this bitmask trick to check every 2048 nodes
         if ((nodes & 2047) != 2047)
             return false;
 
@@ -55,12 +55,27 @@ class Engine {
 
     // print functions
     void print_search_info(int depth, int score, uint64_t nodes, int64_t time_ms, Move bm) {
+        std::string score_type;
+        int         score_value;
+
+        if (is_mate(score))
+        {
+            score_type        = "mate";
+            int mate_distance = (VALUE_MATE - std::abs(score) + 1) / 2;
+            score_value       = score > 0 ? mate_distance : -mate_distance;
+        }
+        else
+        {
+            score_type  = "cp";
+            score_value = score;
+        }
+
         std::cout << "info";
         std::cout << " depth " << depth;
-        std::cout << " score cp " << score;  // Centipawn score
+        std::cout << " score " << score_type << " " << score_value;
         std::cout << " nodes " << nodes;
         std::cout << " time " << time_ms;
-        std::cout << " nps " << (time_ms > 0 ? (nodes * 1000) / time_ms : 0);  // Nodes per second
+        std::cout << " nps " << (time_ms > 0 ? (nodes * 1000) / time_ms : 0);
         std::cout << " bm " << bm;
         std::cout << std::endl;
     }
