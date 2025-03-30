@@ -6,6 +6,7 @@
 #include "types.h"
 #include "perft.h"
 #include "evaluate.h"
+#include "time.h"
 
 void UCIEngine::print_engine_info() {
     std::cout << "id name CHIMP\n";
@@ -39,9 +40,15 @@ void UCIEngine::position(std::istringstream& is) {
 
 void UCIEngine::go(std::istringstream& iss) {
     std::string token;
-    int         depth    = MAX_DEPTH;
-    int         mate     = 0;
-    int         movetime = 0;
+
+    int depth     = MAX_DEPTH;
+    int mate      = 0;
+    int movetime  = 0;
+    int movestogo = 0;
+    int wtime     = 0;
+    int btime     = 0;
+    int winc      = 0;
+    int binc      = 0;
 
     engine.limits = Limits();
 
@@ -57,23 +64,36 @@ void UCIEngine::go(std::istringstream& iss) {
         if (token == "depth")
             iss >> depth;
         else if (token == "movestogo")
-            iss >> engine.limits.movestogo;
+            iss >> movestogo;
         else if (token == "movetime")
             iss >> movetime;
         else if (token == "wtime")
-            iss >> engine.limits.wtime;
+            iss >> wtime;
         else if (token == "btime")
-            iss >> engine.limits.btime;
+            iss >> btime;
         else if (token == "winc")
-            iss >> engine.limits.winc;
+            iss >> winc;
         else if (token == "binc")
-            iss >> engine.limits.binc;
+            iss >> binc;
         else if (token == "infinite")
             engine.limits.isInfinite = true;
         else if (token == "nodes")
             iss >> engine.limits.nodes;
         else if (token == "mate")
             iss >> mate;
+    }
+
+    // Time limits
+    if (movetime > 0)
+    {
+        engine.limits.time.maximum = movetime;
+        engine.limits.time.optimum = movetime;
+    }
+    else
+    {
+        engine.limits.time = engine.board.sideToMove() == Color::WHITE
+                             ? calculate_move_time(wtime, winc, movestogo)
+                             : calculate_move_time(btime, binc, movestogo);
     }
 
     // go mate <x>, with x in moves not in plies
