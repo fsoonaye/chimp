@@ -9,7 +9,7 @@
 
 enum MoveScore : int {
 
-    CAPTURE_SCORE = 7'000'000
+    SCORE_CAPTURE = 7'000'000
 };
 
 
@@ -28,7 +28,7 @@ class MovePicker {
 
     int get_movescore(const Move move) {
         if (engine.board.isCapture(move))
-            return CAPTURE_SCORE + mvvlva(move);
+            return SCORE_CAPTURE + mvvlva(move);
 
         return 0;
     }

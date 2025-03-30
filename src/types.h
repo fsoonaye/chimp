@@ -4,8 +4,16 @@
 
 using namespace chess;
 
-constexpr int VALUE_INF = 32000;
 constexpr int MAX_DEPTH = 64;
+
+constexpr int VALUE_MATE        = 32000;
+constexpr int VALUE_MATE_IN_MAX = VALUE_MATE - 999;
+constexpr int VALUE_INF         = VALUE_MATE + 1;
+constexpr int VALUE_NONE        = VALUE_MATE + 2;
+
+inline bool is_mate(int score) { return std::abs(score) >= VALUE_MATE - MAX_DEPTH; }
+inline int  mate_in(int ply) { return VALUE_MATE - ply; }
+inline int  mated_in(int ply) { return ply - VALUE_MATE; }
 
 struct Time {
     int64_t optimum = 0;

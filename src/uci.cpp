@@ -5,7 +5,17 @@
 #include "engine.h"
 #include "types.h"
 #include "perft.h"
+#include "evaluate.h"
 #include "time.h"
+
+
+void UCIEngine::print_engine_info() {
+    std::cout << "id name CHIMP\n";
+    std::cout << "id author Florian\n";
+    std::cout << "option name Hash type spin default 16 min 16 max 16\n";
+    std::cout << "option name Threads type spin default 1 min 1 max 1\n";
+    std::cout << "uciok\n";
+}
 
 void UCIEngine::position(std::istringstream& is) {
     std::string token, fen;
@@ -95,6 +105,10 @@ void UCIEngine::go(std::istringstream& iss) {
     std::cout << "bestmove " << uci::moveToUci(bestmove) << std::endl;
 }
 
+
+void UCIEngine::eval() { std::cout << evaluate(engine.board) << std::endl; }
+
+
 void UCIEngine::loop() {
     std::string token, input;
     do
@@ -103,17 +117,10 @@ void UCIEngine::loop() {
         std::istringstream is(input);
         token.clear();
         is >> std::skipws >> token;
-        if (token == "quit" || token == "stop")
-            break;
 
         if (input == "uci")
-        {
-            std::cout << "id name CHIMP\n";
-            std::cout << "id author Florian\n";
-            std::cout << "option name Hash type spin default 16 min 16 max 16\n";
-            std::cout << "option name Threads type spin default 1 min 1 max 1\n";
-            std::cout << "uciok\n";
-        }
+            print_engine_info();
+
         else if (input == "isready")
             std::cout << "readyok\n";
 
@@ -126,5 +133,8 @@ void UCIEngine::loop() {
         else if (token == "go")
             go(is);
 
-    } while (token != "quit");
+        else if (token == "eval")
+            eval();
+
+    } while (token != "quit" && token != "stop");
 }
