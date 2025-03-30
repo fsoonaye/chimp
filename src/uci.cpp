@@ -5,6 +5,7 @@
 #include "engine.h"
 #include "types.h"
 #include "perft.h"
+#include "time.h"
 
 void UCIEngine::position(std::istringstream& is) {
     std::string token, fen;
