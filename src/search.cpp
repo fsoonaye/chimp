@@ -11,12 +11,6 @@ using namespace chess;
 
 
 Move Engine::get_bestmove(int depth) {
-    int64_t available_time = board.sideToMove() == Color::WHITE ? limits.wtime : limits.btime;
-    int64_t inc            = board.sideToMove() == Color::WHITE ? limits.winc : limits.binc;
-
-    if (available_time > 0)
-        limits.time = calculate_move_time(available_time, inc, limits.movestogo);
-
     starttime   = std::chrono::high_resolution_clock::now();
     stop_search = false;
     nodes       = 0;
