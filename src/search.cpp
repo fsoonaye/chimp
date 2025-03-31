@@ -24,50 +24,18 @@ Move Engine::get_bestmove(int depth) {
 
 Move Engine::iterative_deepening(int max_depth) {
     Move bestmove = Move::NO_MOVE;
+    int  score;
 
     for (int depth = 1; depth <= max_depth; depth++)
     {
-        int  bestscore     = -VALUE_INF;
-        Move curr_bestmove = Move::NO_MOVE;
-        Move move          = Move::NO_MOVE;
+        score = negamax_search(-VALUE_INF, VALUE_INF, depth, 0, true);
 
-        // probing TT
-        uint64_t poskey = board.hash();
-        Move     ttmove = Move::NO_MOVE;
-        bool     tthit  = false;
-        TTEntry* tte    = tt.probe(poskey, ttmove, tthit);
+        bestmove = pv_table[0][0];
 
-        // TT cutoff
-        // might use this in early iterations only
-        if (tthit && tte->depth >= depth)
-            return tte->move;
-
-        Movelist moves;
-        movegen::legalmoves(moves, board);
-        MovePicker mp(*this, moves, ttmove);
-
-        while ((move = mp.next_move()) != Move::NO_MOVE)
-        {
-            board.makeMove(move);
-            int score = -negamax_search(-VALUE_INF, VALUE_INF, depth, 1, true);
-            board.unmakeMove(move);
-
-            if (score > bestscore)
-            {
-                curr_bestmove = move;
-                bestscore     = score;
-
-                // update PV table
-                pv_table[0][0] = curr_bestmove;
-            }
-        }
+        print_search_info(depth, score, nodes, get_elapsedtime());
 
         if (time_is_up())
             break;
-
-        bestmove = curr_bestmove;
-
-        print_search_info(depth, bestscore, nodes, get_elapsedtime());
     }
 
     return bestmove;
@@ -100,7 +68,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply, bool is_pv) 
     TTEntry* tte    = tt.probe(poskey, ttmove, tthit);
 
     // TT cutoff
-    if (!is_pv && tthit && tte->depth >= depth)
+    if (/*!is_pv &&*/ tthit && tte->depth >= depth)
         return tte->score;
 
     // initializing variables
@@ -123,16 +91,16 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply, bool is_pv) 
     {
         board.makeMove(move);
 
-        if (!searched_pv)
-            score = -negamax_search(-beta, -alpha, depth - 1, ply + 1, true);
+        // if (!searched_pv)
+        score = -negamax_search(-beta, -alpha, depth - 1, ply + 1, true);
 
-        else
-        {
-            score = -negamax_search(-alpha - 1, -alpha, depth - 1, ply + 1, false);
+        // else
+        // {
+        //     score = -negamax_search(-alpha - 1, -alpha, depth - 1, ply + 1, false);
 
-            if (score > alpha && score < beta)
-                score = -negamax_search(-beta, -alpha, depth - 1, ply + 1, true);
-        }
+        //     if (score > alpha && score < beta)
+        //         score = -negamax_search(-beta, -alpha, depth - 1, ply + 1, true);
+        // }
         board.unmakeMove(move);
 
         if (score > bestscore)
