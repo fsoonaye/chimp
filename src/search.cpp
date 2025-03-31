@@ -16,16 +16,18 @@ Move Engine::get_bestmove(int depth) {
     stop_search = false;
     nodes       = 0;
 
+    init_pv_table();
+
     return iterative_deepening(depth);
 }
 
 
-Move Engine::iterative_deepening(int MAX_PLY) {
+Move Engine::iterative_deepening(int max_depth) {
     Move bestmove = Move::NO_MOVE;
 
-    for (int depth = 1; depth <= MAX_PLY; depth++)
+    for (int depth = 1; depth <= max_depth; depth++)
     {
-        int  bestvalue     = -VALUE_INF;
+        int  bestscore     = -VALUE_INF;
         Move curr_bestmove = Move::NO_MOVE;
         Move move          = Move::NO_MOVE;
 
@@ -36,6 +38,7 @@ Move Engine::iterative_deepening(int MAX_PLY) {
         TTEntry* tte    = tt.probe(poskey, ttmove, tthit);
 
         // TT cutoff
+        // might use this in early iterations only
         if (tthit && tte->depth >= depth)
             return tte->move;
 
@@ -46,13 +49,16 @@ Move Engine::iterative_deepening(int MAX_PLY) {
         while ((move = mp.next_move()) != Move::NO_MOVE)
         {
             board.makeMove(move);
-            int value = -absearch(-VALUE_INF, VALUE_INF, depth, 1);
+            int score = -absearch(-VALUE_INF, VALUE_INF, depth, 0, true);
             board.unmakeMove(move);
 
-            if (value > bestvalue)
+            if (score > bestscore)
             {
                 curr_bestmove = move;
-                bestvalue     = value;
+                bestscore     = score;
+
+                // update PV table
+                pv_table[0][0] = curr_bestmove;
             }
         }
 
@@ -61,7 +67,7 @@ Move Engine::iterative_deepening(int MAX_PLY) {
 
         bestmove = curr_bestmove;
 
-        print_search_info(depth, bestvalue, nodes, get_elapsedtime(), bestmove);
+        print_search_info(depth, bestscore, nodes, get_elapsedtime());
     }
 
     return bestmove;
@@ -94,23 +100,39 @@ int Engine::absearch(int alpha, int beta, int depth, int ply, bool is_pv) {
     TTEntry* tte    = tt.probe(poskey, ttmove, tthit);
 
     // TT cutoff
-    if (tthit && tte->depth >= depth)
+    if (!is_pv && tthit && tte->depth >= depth)
         return tte->score;
 
     // initializing variables
-    int  bestscore = -VALUE_INF;
-    Move bestmove  = Move::NO_MOVE;
-    Move move      = Move::NO_MOVE;
+    int  bestscore   = -VALUE_INF;
+    Move bestmove    = Move::NO_MOVE;
+    Move move        = Move::NO_MOVE;
+    bool searched_pv = false;
+    int  score;
 
     // generating legal moves
     Movelist moves;
     movegen::legalmoves(moves, board);
-    MovePicker mp(*this, moves, ttmove);
 
+    // check for checkmate or stalemate
+    if (moves.empty())
+        return board.inCheck() ? mated_in(ply) : 0;
+
+    MovePicker mp(*this, moves, ttmove);
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
         board.makeMove(move);
-        int score = -absearch(-beta, -alpha, depth - 1, ply + 1);
+
+        if (!searched_pv)
+            score = -absearch(-beta, -alpha, depth - 1, ply + 1, true);
+
+        else
+        {
+            score = -absearch(-alpha - 1, -alpha, depth - 1, ply + 1, false);
+
+            if (score > alpha && score < beta)
+                score = -absearch(-beta, -alpha, depth - 1, ply + 1, true);
+        }
         board.unmakeMove(move);
 
         if (score > bestscore)
@@ -119,16 +141,27 @@ int Engine::absearch(int alpha, int beta, int depth, int ply, bool is_pv) {
             bestmove  = move;
 
             if (score > alpha)
-                alpha = score;
+            {
+                alpha       = score;
+                searched_pv = true;
+
+                // update PV table
+                pv_table[ply][0] = move;
+
+                // Copy moves from deeper ply
+                for (int i = 0; i < pv_length[ply + 1]; i++)
+                {
+                    pv_table[ply][i + 1] = pv_table[ply + 1][i];
+                }
+
+                // Update length of PV at this ply
+                pv_length[ply] = pv_length[ply + 1] + 1;
+            }
         }
 
         if (score >= beta)
             return bestscore;
     }
-
-    // if no legal moves are generated, it is either a loss or a draw
-    if (moves.empty())
-        return board.inCheck() ? -VALUE_MATE + ply : 0;
 
     tt.store(poskey, depth, bestscore, bestmove);
 
@@ -173,8 +206,12 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
     // generating capture moves
     Movelist moves;
     movegen::legalmoves<movegen::MoveGenType::CAPTURE>(moves, board);
-    MovePicker mp(*this, moves, ttmove);
 
+    // check for checkmate or stalemate
+    if (moves.empty())
+        return board.inCheck() ? mated_in(ply) : 0;
+
+    MovePicker mp(*this, moves, ttmove);
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
         // SEE pruning
@@ -197,10 +234,6 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
         if (score >= beta)
             return bestscore;
     }
-
-    // if no legal moves are generated, it is either a loss or a draw
-    if (moves.empty())
-        return board.inCheck() ? -VALUE_MATE + ply : 0;
 
     tt.store(poskey, depth, bestscore, bestmove);
 
