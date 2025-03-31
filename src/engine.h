@@ -65,7 +65,16 @@ class Engine {
     }
 
     // print functions
-    void print_search_info(int depth, int score, uint64_t nodes, int64_t time_ms, Move bm) {
+    std::string get_pv_string() {
+        std::stringstream ss;
+
+        for (int i = 0; i < pv_length[0]; i++)
+            ss << pv_table[0][i] << " ";
+
+        return ss.str();
+    }
+
+    void print_search_info(int depth, int score, uint64_t nodes, int64_t time_ms) {
         std::string score_type;
         int         score_value;
 
@@ -87,7 +96,7 @@ class Engine {
         std::cout << " nodes " << nodes;
         std::cout << " time " << time_ms;
         std::cout << " nps " << (time_ms > 0 ? (nodes * 1000) / time_ms : 0);
-        std::cout << " bm " << bm;
+        std::cout << " pv " << get_pv_string();
         std::cout << std::endl;
     }
 
