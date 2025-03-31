@@ -49,7 +49,7 @@ Move Engine::iterative_deepening(int max_depth) {
         while ((move = mp.next_move()) != Move::NO_MOVE)
         {
             board.makeMove(move);
-            int score = -absearch(-VALUE_INF, VALUE_INF, depth, 0, true);
+            int score = -negamax_search(-VALUE_INF, VALUE_INF, depth, 1, true);
             board.unmakeMove(move);
 
             if (score > bestscore)
@@ -74,7 +74,7 @@ Move Engine::iterative_deepening(int max_depth) {
 }
 
 
-int Engine::absearch(int alpha, int beta, int depth, int ply, bool is_pv) {
+int Engine::negamax_search(int alpha, int beta, int depth, int ply, bool is_pv) {
     nodes++;
 
     if (time_is_up())
@@ -124,14 +124,14 @@ int Engine::absearch(int alpha, int beta, int depth, int ply, bool is_pv) {
         board.makeMove(move);
 
         if (!searched_pv)
-            score = -absearch(-beta, -alpha, depth - 1, ply + 1, true);
+            score = -negamax_search(-beta, -alpha, depth - 1, ply + 1, true);
 
         else
         {
-            score = -absearch(-alpha - 1, -alpha, depth - 1, ply + 1, false);
+            score = -negamax_search(-alpha - 1, -alpha, depth - 1, ply + 1, false);
 
             if (score > alpha && score < beta)
-                score = -absearch(-beta, -alpha, depth - 1, ply + 1, true);
+                score = -negamax_search(-beta, -alpha, depth - 1, ply + 1, true);
         }
         board.unmakeMove(move);
 
