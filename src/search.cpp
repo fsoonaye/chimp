@@ -57,13 +57,14 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     if (depth == 0)
         return quiescence_search(alpha, beta, depth, ply);
 
-    // Draw or repetition detection
-    if (board.isRepetition() || board.isHalfMoveDraw())
-        return 0;
 
-    // Mate distance pruning
     if (!is_root_node)
     {
+        // Draw or repetition detection
+        if (board.isRepetition() || board.isHalfMoveDraw())
+            return 0;
+
+        // Mate distance pruning
         alpha = std::max(alpha, mated_in(ply));
         beta  = std::min(beta, mate_in(ply + 1));
         if (alpha >= beta)
