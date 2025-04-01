@@ -27,6 +27,13 @@ class Engine {
         if (stop_search)
             return true;
 
+        // handle go nodes <x>
+        if (limits.nodes > 0 && nodes >= limits.nodes)
+        {
+            stop_search = true;
+            return true;
+        }
+
         // Checking time every node is costly.
         // Instead, I use this bitmask trick to check every 2048 nodes
         if ((nodes & 2047) != 2047)
