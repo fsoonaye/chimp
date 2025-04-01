@@ -6,13 +6,21 @@
 
 using namespace chess;
 
+enum NodeType {
+    PV,
+    NON_PV,
+    ROOT
+};
+
 class Engine {
    public:
     // search functions
-    Move get_bestmove(int depth = MAX_DEPTH);
-    Move iterative_deepening(int max_depth);
-    int  absearch(int alpha, int beta, int depth, int ply);
-    int  quiescence_search(int alpha, int beta, int depth, int ply);
+    Move get_bestmove(int depth = MAX_PLY);
+    Move iterative_deepening(int MAX_PLY);
+
+    template<NodeType nodetype>
+    int negamax_search(int alpha, int beta, int depth, int ply);
+    int quiescence_search(int alpha, int beta, int depth, int ply);
 
     // reset function for ucinewgame
     void reset() {
@@ -27,8 +35,15 @@ class Engine {
         if (stop_search)
             return true;
 
+        // handle go nodes <x>
+        if (limits.nodes > 0 && nodes >= limits.nodes)
+        {
+            stop_search = true;
+            return true;
+        }
+
         // Checking time every node is costly.
-        // Instead, I use this bitmask trick to check every 2048 nodes
+        // Instead, this bitmask trick is used to check only every 2048 nodes
         if ((nodes & 2047) != 2047)
             return false;
 
@@ -53,8 +68,28 @@ class Engine {
         return std::chrono::duration_cast<std::chrono::milliseconds>(currtime - starttime).count();
     }
 
+    void init_pv_table() {
+        for (int i = 0; i < MAX_PLY; i++)
+        {
+            pv_length[i] = 0;
+            for (int j = 0; j < MAX_PLY; j++)
+            {
+                pv_table[i][j] = Move::NO_MOVE;
+            }
+        }
+    }
+
     // print functions
-    void print_search_info(int depth, int score, uint64_t nodes, int64_t time_ms, Move bm) {
+    std::string get_pv_string() {
+        std::stringstream ss;
+
+        for (int i = 0; i < pv_length[0]; i++)
+            ss << pv_table[0][i] << " ";
+
+        return ss.str();
+    }
+
+    void print_search_info(int depth, int score, uint64_t nodes, int64_t time_ms) {
         std::string score_type;
         int         score_value;
 
@@ -76,9 +111,12 @@ class Engine {
         std::cout << " nodes " << nodes;
         std::cout << " time " << time_ms;
         std::cout << " nps " << (time_ms > 0 ? (nodes * 1000) / time_ms : 0);
-        std::cout << " bm " << bm;
+        std::cout << " pv " << get_pv_string();
         std::cout << std::endl;
     }
+
+    Move pv_table[MAX_PLY][MAX_PLY];
+    int  pv_length[MAX_PLY];
 
     uint64_t nodes = 0;
 

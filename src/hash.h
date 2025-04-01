@@ -9,6 +9,7 @@ struct TTEntry {
     int      depth = 0;
     int      score = 0;
     Move     move  = Move::NO_MOVE;
+    Bound    bound = BOUND_NONE;
 };
 
 class TranspositionTable {
@@ -16,7 +17,7 @@ class TranspositionTable {
     TranspositionTable();
     std::vector<TTEntry> table;
 
-    void     store(uint64_t key, int depth, int score, Move move);
+    void     store(uint64_t key, int depth, int score, Move move, Bound bound);
     TTEntry* probe(uint64_t key, Move& ttmove, bool& tt_hit);
 
     uint32_t index(uint64_t key);
