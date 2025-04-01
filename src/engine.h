@@ -6,13 +6,21 @@
 
 using namespace chess;
 
+enum NodeType {
+    PV,
+    NON_PV,
+    ROOT
+};
+
 class Engine {
    public:
     // search functions
     Move get_bestmove(int depth = MAX_PLY);
     Move iterative_deepening(int MAX_PLY);
-    int  negamax_search(int alpha, int beta, int depth, int ply, bool is_pv);
-    int  quiescence_search(int alpha, int beta, int depth, int ply);
+
+    template<NodeType nodetype>
+    int negamax_search(int alpha, int beta, int depth, int ply);
+    int quiescence_search(int alpha, int beta, int depth, int ply);
 
     // reset function for ucinewgame
     void reset() {
