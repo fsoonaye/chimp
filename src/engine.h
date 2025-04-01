@@ -43,7 +43,7 @@ class Engine {
         }
 
         // Checking time every node is costly.
-        // Instead, I use this bitmask trick to check every 2048 nodes
+        // Instead, this bitmask trick is used to check only every 2048 nodes
         if ((nodes & 2047) != 2047)
             return false;
 
