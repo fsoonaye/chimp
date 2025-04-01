@@ -1,6 +1,6 @@
 #include "hash.h"
 
-void TranspositionTable::store(uint64_t key, int depth, int score, Move move) {
+void TranspositionTable::store(uint64_t key, int depth, int score, Move move, Bound bound) {
     TTEntry* tte = &table[index(key)];
 
     if (tte->key != key || depth >= tte->depth)
@@ -8,6 +8,7 @@ void TranspositionTable::store(uint64_t key, int depth, int score, Move move) {
         tte->key   = key;
         tte->depth = depth;
         tte->score = score;
+        tte->bound = bound;
 
         if (move != Move::NO_MOVE)
             tte->move = move;
