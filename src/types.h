@@ -15,6 +15,13 @@ inline bool is_mate(int score) { return std::abs(score) >= VALUE_MATE - MAX_PLY;
 inline int  mate_in(int ply) { return VALUE_MATE - ply; }
 inline int  mated_in(int ply) { return ply - VALUE_MATE; }
 
+enum Bound : uint8_t {
+    BOUND_NONE,
+    BOUND_UPPER,
+    BOUND_LOWER,
+    BOUND_EXACT
+};
+
 struct Time {
     int64_t optimum = 0;
     int64_t maximum = 0;
