@@ -5,8 +5,6 @@
 #include "time.h"
 #include "see.h"
 
-#include <random>
-
 using namespace chess;
 
 
@@ -28,21 +26,23 @@ Move Engine::iterative_deepening(int max_depth) {
 
     for (int depth = 1; depth <= max_depth; depth++)
     {
-        score = negamax_search(-VALUE_INF, VALUE_INF, depth, 0, true);
+        score = negamax_search<PV>(-VALUE_INF, VALUE_INF, depth, 0);
+
+        // current depth has been incompletely searched
+        // we return the bestmove and print pv for the latest fully searched depth
+        if (time_is_up())
+            break;
 
         bestmove = pv_table[0][0];
 
         print_search_info(depth, score, nodes, get_elapsedtime());
-
-        if (time_is_up())
-            break;
     }
 
     return bestmove;
 }
 
-
-int Engine::negamax_search(int alpha, int beta, int depth, int ply, bool is_pv) {
+template<NodeType nodetype>
+int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     nodes++;
 
     if (time_is_up())
@@ -50,7 +50,9 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply, bool is_pv) 
 
     // Initializing variables
     bool is_root_node = (ply == 0);
-    pv_length[ply]    = 0;
+    bool is_pv_node   = (nodetype != NON_PV);
+
+    pv_length[ply] = ply;
 
     if (depth == 0)
         return quiescence_search(alpha, beta, depth, ply);
@@ -76,7 +78,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply, bool is_pv) 
     int      ttscore = tthit ? tte->score : VALUE_NONE;
 
     // TT cutoff
-    if (!is_root_node && !is_pv && tthit && tte->depth >= depth)
+    if (!is_root_node && !is_pv_node && tthit && tte->depth >= depth)
     {
         if (tte->bound == BOUND_EXACT)
             return ttscore;
@@ -92,10 +94,9 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply, bool is_pv) 
     }
 
     // initializing variables
-    int  bestscore   = -VALUE_INF;
-    Move bestmove    = Move::NO_MOVE;
-    Move move        = Move::NO_MOVE;
-    bool searched_pv = is_pv;
+    int  bestscore = -VALUE_INF;
+    Move bestmove  = Move::NO_MOVE;
+    Move move      = Move::NO_MOVE;
     int  score;
 
     // generating legal moves
@@ -111,20 +112,21 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply, bool is_pv) 
     {
         board.makeMove(move);
 
-        if (!searched_pv)
+        // Principal Variation Search
+        if (is_root_node)
             // For the first move → full window search.
-            score = -negamax_search(-beta, -alpha, depth - 1, ply + 1, true);
+            score = -negamax_search<nodetype>(-beta, -alpha, depth - 1, ply + 1);
 
         else
         {
-            // Principal Variation Search for subsequent moves:
-            // First, search with a null window [ -α-1, -α ].
-            score = -negamax_search(-alpha - 1, -alpha, depth - 1, ply + 1, false);
+            // First, search with a null window [-α-1, -α].
+            score = -negamax_search<NON_PV>(-alpha - 1, -alpha, depth - 1, ply + 1);
 
-            // If the score falls between α and β, it might be better than α, so re-search with full window.
-            if (score > alpha && score < beta)
-                score = -negamax_search(-beta, -alpha, depth - 1, ply + 1, true);
+            // If the score ∈ [α, β], it might be better than α, so re-search with full window.
+            if (score > alpha && score < beta && is_pv_node)
+                score = -negamax_search<PV>(-beta, -alpha, depth - 1, ply + 1);
         }
+
         board.unmakeMove(move);
 
         if (score > bestscore)
@@ -133,17 +135,18 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply, bool is_pv) 
 
             if (score > alpha)
             {
-                alpha       = score;
-                bestmove    = move;
-                searched_pv = true;
+                alpha    = score;
+                bestmove = move;
 
                 // Update principal variation:
-                pv_table[ply][0] = move;
+                pv_table[ply][ply] = move;
 
-                for (int i = 0; i < pv_length[ply + 1]; i++)
-                    pv_table[ply][i + 1] = pv_table[ply + 1][i];
+                // copying pv from the ply just after
+                for (int nextply = ply + 1; nextply < pv_length[ply + 1]; nextply++)
+                    pv_table[ply][nextply] = pv_table[ply + 1][nextply];
 
-                pv_length[ply] = pv_length[ply + 1] + 1;
+                // update current pv length from the ply just after
+                pv_length[ply] = pv_length[ply + 1];
             }
         }
 
