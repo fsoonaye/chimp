@@ -48,34 +48,54 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply, bool is_pv) 
     if (time_is_up())
         return 0;
 
+    // Initializing variables
+    bool is_root_node = (ply == 0);
+    pv_length[ply]    = 0;
+
     if (depth == 0)
         return quiescence_search(alpha, beta, depth, ply);
 
-    // draw detection
+    // Draw or repetition detection
     if (board.isRepetition() || board.isHalfMoveDraw())
         return 0;
 
-    // mate distance pruning
-    alpha = std::max(alpha, mated_in(ply));
-    beta  = std::min(beta, mate_in(ply + 1));
-    if (alpha >= beta)
-        return alpha;
+    // Mate distance pruning
+    if (!is_root_node)
+    {
+        alpha = std::max(alpha, mated_in(ply));
+        beta  = std::min(beta, mate_in(ply + 1));
+        if (alpha >= beta)
+            return alpha;
+    }
 
     // probing TT
-    uint64_t poskey = board.hash();
-    Move     ttmove = Move::NO_MOVE;
-    bool     tthit  = false;
-    TTEntry* tte    = tt.probe(poskey, ttmove, tthit);
+    uint64_t poskey  = board.hash();
+    Move     ttmove  = Move::NO_MOVE;
+    bool     tthit   = false;
+    TTEntry* tte     = tt.probe(poskey, ttmove, tthit);
+    int      ttscore = tthit ? tte->score : VALUE_NONE;
 
     // TT cutoff
-    if (/*!is_pv &&*/ tthit && tte->depth >= depth)
-        return tte->score;
+    if (!is_root_node && !is_pv && tthit && tte->depth >= depth)
+    {
+        if (tte->bound == BOUND_EXACT)
+            return ttscore;
+
+        else if (tte->bound == BOUND_LOWER)
+            alpha = std::max(alpha, ttscore);
+
+        else if (tte->bound == BOUND_UPPER)
+            beta = std::min(beta, ttscore);
+
+        if (alpha >= beta)
+            return ttscore;
+    }
 
     // initializing variables
     int  bestscore   = -VALUE_INF;
     Move bestmove    = Move::NO_MOVE;
     Move move        = Move::NO_MOVE;
-    bool searched_pv = false;
+    bool searched_pv = is_pv;
     int  score;
 
     // generating legal moves
@@ -91,47 +111,52 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply, bool is_pv) 
     {
         board.makeMove(move);
 
-        // if (!searched_pv)
-        score = -negamax_search(-beta, -alpha, depth - 1, ply + 1, true);
+        if (!searched_pv)
+            // For the first move → full window search.
+            score = -negamax_search(-beta, -alpha, depth - 1, ply + 1, true);
 
-        // else
-        // {
-        //     score = -negamax_search(-alpha - 1, -alpha, depth - 1, ply + 1, false);
+        else
+        {
+            // Principal Variation Search for subsequent moves:
+            // First, search with a null window [ -α-1, -α ].
+            score = -negamax_search(-alpha - 1, -alpha, depth - 1, ply + 1, false);
 
-        //     if (score > alpha && score < beta)
-        //         score = -negamax_search(-beta, -alpha, depth - 1, ply + 1, true);
-        // }
+            // If the score falls between α and β, it might be better than α, so re-search with full window.
+            if (score > alpha && score < beta)
+                score = -negamax_search(-beta, -alpha, depth - 1, ply + 1, true);
+        }
         board.unmakeMove(move);
 
         if (score > bestscore)
         {
             bestscore = score;
-            bestmove  = move;
 
             if (score > alpha)
             {
                 alpha       = score;
+                bestmove    = move;
                 searched_pv = true;
 
-                // update PV table
+                // Update principal variation:
                 pv_table[ply][0] = move;
 
-                // Copy moves from deeper ply
                 for (int i = 0; i < pv_length[ply + 1]; i++)
-                {
                     pv_table[ply][i + 1] = pv_table[ply + 1][i];
-                }
 
-                // Update length of PV at this ply
                 pv_length[ply] = pv_length[ply + 1] + 1;
             }
         }
 
         if (score >= beta)
-            return bestscore;
+            // return bestscore;
+            break;
     }
 
-    tt.store(poskey, depth, bestscore, bestmove);
+    // Store in TT
+    Bound bound = bestscore >= beta         ? BOUND_LOWER
+                : bestmove != Move::NO_MOVE ? BOUND_EXACT
+                                            : BOUND_UPPER;
+    tt.store(poskey, depth, bestscore, bestmove, bound);
 
     return bestscore;
 }
@@ -151,14 +176,27 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
         return 0;
 
     // probing TT
-    uint64_t poskey = board.hash();
-    Move     ttmove = Move::NO_MOVE;
-    bool     tthit  = false;
-    TTEntry* tte    = tt.probe(poskey, ttmove, tthit);
+    uint64_t poskey  = board.hash();
+    Move     ttmove  = Move::NO_MOVE;
+    bool     tthit   = false;
+    TTEntry* tte     = tt.probe(poskey, ttmove, tthit);
+    int      ttscore = tthit ? tte->score : VALUE_NONE;
 
     // TT cutoff
     if (tthit && tte->depth >= depth)
-        return tte->score;
+    {
+        if (tte->bound == BOUND_EXACT)
+            return ttscore;
+
+        else if (tte->bound == BOUND_LOWER)
+            alpha = std::max(alpha, ttscore);
+
+        else if (tte->bound == BOUND_UPPER)
+            beta = std::min(beta, ttscore);
+
+        if (alpha >= beta)
+            return ttscore;
+    }
 
     // initializing variables
     // prematurily evaluating the board to check if we're out of bounds or in need to update alpha
@@ -200,10 +238,15 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
         }
 
         if (score >= beta)
-            return bestscore;
+            // return bestscore;
+            break;
     }
 
-    tt.store(poskey, depth, bestscore, bestmove);
+    Bound bound = bestscore >= beta         ? BOUND_LOWER
+                : bestmove != Move::NO_MOVE ? BOUND_EXACT
+                                            : BOUND_UPPER;
+    tt.store(poskey, depth, bestscore, bestmove, bound);
+
 
     return bestscore;
 }
