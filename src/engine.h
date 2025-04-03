@@ -28,6 +28,7 @@ class Engine {
         nodes       = 0;
         stop_search = false;
         tt.clear();
+        std::fill(&killer_moves[0][0], &killer_moves[0][0] + MAX_PLY * 2, Move::NO_MOVE);
     }
 
     // time functions
@@ -68,15 +69,10 @@ class Engine {
         return std::chrono::duration_cast<std::chrono::milliseconds>(currtime - starttime).count();
     }
 
-    void init_pv_table() {
-        for (int i = 0; i < MAX_PLY; i++)
-        {
-            pv_length[i] = 0;
-            for (int j = 0; j < MAX_PLY; j++)
-            {
-                pv_table[i][j] = Move::NO_MOVE;
-            }
-        }
+    void init_heuristic_tables() {
+        std::memset(pv_length, 0, sizeof(pv_length));
+        std::fill(&pv_table[0][0], &pv_table[0][0] + MAX_PLY * MAX_PLY, Move::NO_MOVE);
+        std::fill(&killer_moves[0][0], &killer_moves[0][0] + MAX_PLY * 2, Move::NO_MOVE);
     }
 
     // print functions
@@ -117,6 +113,8 @@ class Engine {
 
     Move pv_table[MAX_PLY][MAX_PLY];
     int  pv_length[MAX_PLY];
+
+    Move killer_moves[MAX_PLY][2];
 
     uint64_t nodes = 0;
 

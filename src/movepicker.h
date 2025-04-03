@@ -9,17 +9,20 @@
 
 enum MoveScore : int {
 
-    SCORE_CAPTURE = 7'000'000
+    SCORE_CAPTURE = 7'000'000,
+    SCORE_KILLER1 = 6'000'000,
+    SCORE_KILLER2 = 5'000'000
 };
 
 
 class MovePicker {
 
    public:
-    MovePicker(const Engine& engine, Movelist& moves, Move TTmove) :
+    MovePicker(const Engine& engine, Movelist& moves, Move TTmove, int ply) :
         engine(engine),
         movelist(moves),
-        availableTTmove(TTmove) {}
+        availableTTmove(TTmove),
+        ply(ply) {}
 
     void score() {
         for (int i = 0; i < movelist.size(); i++)
@@ -27,8 +30,16 @@ class MovePicker {
     }
 
     int get_movescore(const Move move) {
+        // mvvlva
         if (engine.board.isCapture(move))
             return SCORE_CAPTURE + mvvlva(move);
+
+        // killer moves
+        if (move == engine.killer_moves[ply][0])
+            return SCORE_KILLER1;
+
+        if (move == engine.killer_moves[ply][1])
+            return SCORE_KILLER2;
 
         return 0;
     }
@@ -127,4 +138,5 @@ class MovePicker {
 
     Move availableTTmove = Move::NO_MOVE;
     Move ttmove          = Move::NO_MOVE;
+    int  ply;
 };

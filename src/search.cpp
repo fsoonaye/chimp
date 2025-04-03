@@ -13,8 +13,7 @@ Move Engine::get_bestmove(int depth) {
     starttime   = std::chrono::high_resolution_clock::now();
     stop_search = false;
     nodes       = 0;
-
-    init_pv_table();
+    init_heuristic_tables();
 
     return iterative_deepening(depth);
 }
@@ -28,9 +27,9 @@ Move Engine::iterative_deepening(int max_depth) {
     {
         score = negamax_search<PV>(-VALUE_INF, VALUE_INF, depth, 0);
 
-        // current depth has been incompletely searched
-        // we return the bestmove and print pv for the latest fully searched depth
         if (time_is_up())
+            // current depth has been incompletely searched
+            // we only return the bestmove and print pv for the latest fully searched depth
             break;
 
         bestmove = pv_table[0][0];
@@ -108,7 +107,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     if (moves.empty())
         return board.inCheck() ? mated_in(ply) : 0;
 
-    MovePicker mp(*this, moves, ttmove);
+    MovePicker mp(*this, moves, ttmove, ply);
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
         board.makeMove(move);
@@ -152,8 +151,17 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
         }
 
         if (score >= beta)
-            // return bestscore;
+        {
+            // Store killer moves
+            if (move != killer_moves[ply][0] && !board.isCapture(move))
+            {
+                // Shift the previous killer and store the new one
+                killer_moves[ply][1] = killer_moves[ply][0];
+                killer_moves[ply][0] = move;
+            }
+
             break;
+        }
     }
 
     // Store in TT
@@ -202,7 +210,6 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
             return ttscore;
     }
 
-    // initializing variables
     // prematurily evaluating the board to check if we're out of bounds or in need to update alpha
     int bestscore = evaluate(board);
     if (bestscore >= beta)
@@ -210,6 +217,7 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
     if (bestscore > alpha)
         alpha = bestscore;
 
+    // initializing variables
     Move bestmove = Move::NO_MOVE;
     Move move     = Move::NO_MOVE;
 
@@ -221,7 +229,7 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
     if (moves.empty())
         return board.inCheck() ? mated_in(ply) : 0;
 
-    MovePicker mp(*this, moves, ttmove);
+    MovePicker mp(*this, moves, ttmove, ply);
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
         // SEE pruning
@@ -246,6 +254,7 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
             break;
     }
 
+    // Store in TT
     Bound bound = bestscore >= beta         ? BOUND_LOWER
                 : bestmove != Move::NO_MOVE ? BOUND_EXACT
                                             : BOUND_UPPER;
