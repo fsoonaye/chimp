@@ -1375,7 +1375,7 @@ class Move {
     constexpr void setScore(std::int16_t score) noexcept { score_ = score; }
 
     [[nodiscard]] constexpr std::uint16_t move() const noexcept { return move_; }
-    [[nodiscard]] constexpr std::int16_t  score() const noexcept { return score_; }
+    [[nodiscard]] constexpr std::uint16_t score() const noexcept { return score_; }
 
     constexpr bool operator==(const Move& rhs) const noexcept { return move_ == rhs.move_; }
     constexpr bool operator!=(const Move& rhs) const noexcept { return move_ != rhs.move_; }
@@ -1389,7 +1389,7 @@ class Move {
 
    private:
     std::uint16_t move_;
-    std::int16_t  score_;
+    std::uint16_t score_;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Move& move) {
