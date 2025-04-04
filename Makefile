@@ -1,4 +1,4 @@
-CXX ?= $(shell command -v clang++ 2>/dev/null || echo g++)
+CXX = clang++
 CXXFLAGS := -O3 -march=native -std=c++20 -Wall -Wextra
 LDFLAGS := 
 
