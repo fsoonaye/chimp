@@ -5,7 +5,7 @@
 
 using namespace chess;
 
-
+// None is for handling en passant (pawn takes pawn is 0 anyway)
 // value = (Victim * 6) - Attacker + 1
 static constexpr int16_t mvvlva_array[7][7] = {
     // Attackers:
@@ -19,6 +19,7 @@ static constexpr int16_t mvvlva_array[7][7] = {
     {  0,  0,  0,  0,  0,  0,  0  }   // NONE
 };
 
+// values are from https://www.chessprogramming.org/PeSTO%27s_Evaluation_Function
 namespace pst {
     // Static piece values for middlegame
     static constexpr std::array<int, 6> mg_value = {
