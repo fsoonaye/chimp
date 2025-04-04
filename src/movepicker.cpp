@@ -15,7 +15,6 @@ Move MovePicker::next_move() {
         if (ttmove != Move::NO_MOVE && is_in_movelist(ttmove))
             return ttmove;
 
-
         [[fallthrough]];
 
     case Phase::SCORE :
@@ -23,6 +22,7 @@ Move MovePicker::next_move() {
 
         // Score all moves before starting to pick them
         score_moves();
+
         [[fallthrough]];
 
     case Phase::CAPTURES :

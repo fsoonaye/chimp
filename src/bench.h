@@ -4,7 +4,13 @@
 
 namespace bench {
 
-int run(int depth = 7);
+/**
+ * Runs a standardized benchmark on a set of 50 test positions.
+ * Used for performance testing and OpenBench compatibility.
+ *
+ * @param depth The search depth to use for benchmarking
+ */
+void run(int depth = 7);
 
 // fens from Stormphrax, ultimately from bitgenie
 static const std::array<std::string, 50> benchfens{
