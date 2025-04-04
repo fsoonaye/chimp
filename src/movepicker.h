@@ -1,142 +1,93 @@
 #pragma once
 
-#include "../include/chess.hpp"
-
 #include "engine.h"
-
 #include "arrays.h"
 
-
-enum MoveScore : int {
-
-    SCORE_CAPTURE = 7'000'000,
-    SCORE_KILLER1 = 6'000'000,
-    SCORE_KILLER2 = 5'000'000
+/**
+ * @enum MoveScore
+ * @brief Score categories used for move ordering
+ */
+enum MoveScore : int16_t {
+    SCORE_CAPTURE = 10000,
+    SCORE_KILLER1 = 9000,
+    SCORE_KILLER2 = 8000
 };
 
-
+/**
+ * @class MovePicker
+ * @brief Efficiently picks moves in optimal order for alpha-beta pruning
+ * 
+ * Implements a move ordering strategy based on:
+ * 1. TT move
+ * 2. Captures sorted by MVV-LVA
+ * 3. Killer moves
+ * 4. Regular quiet moves
+ */
 class MovePicker {
-
    public:
-    MovePicker(const Engine& engine, Movelist& moves, Move TTmove, int ply) :
-        engine(engine),
-        movelist(moves),
-        availableTTmove(TTmove),
-        ply(ply) {}
+    /**
+     * @brief Constructs a MovePicker for a specific position and move set
+     * @param engine The current engine state with board and search context
+     * @param moves List of legal moves to be picked
+     * @param ttMove Transposition table move (if available)
+     * @param ply Current ply from root position
+     */
+    MovePicker(const Engine& engine, Movelist& moves, Move ttMove, int ply);
 
-    void score() {
-        for (int i = 0; i < movelist.size(); i++)
-            movelist[i].setScore(get_movescore(movelist[i]));
-    }
-
-    int get_movescore(const Move move) {
-        // mvvlva
-        if (engine.board.isCapture(move))
-            return SCORE_CAPTURE + mvvlva(move);
-
-        // killer moves
-        if (move == engine.killer_moves[ply][0])
-            return SCORE_KILLER1;
-
-        if (move == engine.killer_moves[ply][1])
-            return SCORE_KILLER2;
-
-        return 0;
-    }
-
-    int mvvlva(Move move) {
-        int victim   = engine.board.at<PieceType>(move.to()) + 1;
-        int attacker = engine.board.at<PieceType>(move.from()) + 1;
-        return mvvlva_array[victim][attacker];
-    }
-
-    Move next_move() {
-        switch (pick)
-        {
-        case Pick::TT :
-            pick = Pick::SCORE;
-
-            if (availableTTmove != Move::NO_MOVE
-                && std::find(movelist.begin(), movelist.end(), availableTTmove) != movelist.end())
-            {
-                ttmove = availableTTmove;
-                return ttmove;
-            }
-
-            // continue onto the next case
-            [[fallthrough]];
-
-        case Pick::SCORE :
-            pick = Pick::CAPTURES;
-
-            score();
-
-            // continue onto the next case
-            [[fallthrough]];
-
-        case Pick::CAPTURES :
-            while (played < movelist.size())
-            {
-                int index = played;
-                for (int i = 1 + index; i < movelist.size(); i++)
-                {
-                    if (movelist[i].score() > movelist[index].score())
-                        index = i;
-                }
-
-                std::swap(movelist[index], movelist[played]);
-
-                if (movelist[played] != ttmove)
-                    return movelist[played++];
-
-                played++;
-            }
-
-            pick = Pick::QUIET;
-            [[fallthrough]];
-
-        case Pick::QUIET :
-            while (played < movelist.size())
-            {
-                int index = played;
-                for (int i = 1 + index; i < movelist.size(); i++)
-                {
-                    if (movelist[i].score() > movelist[index].score())
-                        index = i;
-                }
-
-                std::swap(movelist[index], movelist[played]);
-
-                if (movelist[played] != ttmove)
-                    return movelist[played++];
-
-                played++;
-            }
-
-            return Move::NO_MOVE;
-
-        default :
-            return Move::NO_MOVE;
-        }
-    }
-
+    /**
+     * @brief Returns the next best move according to ordering heuristics
+     * @return Next move to try, or NO_MOVE when all moves are exhausted
+     */
+    Move next_move();
 
    private:
-    enum class Pick {
+    /**
+     * @enum Phase
+     * @brief Search phases for the move picking process
+     */
+    enum class Phase {
         TT,
         SCORE,
         CAPTURES,
+        KILLER1,
+        KILLER2,
         QUIET
     };
-    Pick pick = Pick::TT;
+
+    /**
+     * @brief Finds the index of the move with the highest score starting from a given index
+     * @param start_idx Index to start searching from
+     * @return Index of the best-scored move
+     */
+    int find_best_from(int start_idx);
+
+    /**
+     * @brief Checks if a move exists in the current movelist
+     * @param move The move to look for
+     * @return True if the move is in the movelist, false otherwise
+     */
+    bool is_in_movelist(Move move) const;
+
+    /**
+     * @brief Assigns scores to all moves in the movelist for ordering
+     */
+    void score_moves();
+
+    /**
+     * @brief Calculates the Most Valuable Victim - Least Valuable Attacker score for a capture
+     * @param move The capture move to score
+     * @return MVV-LVA score for the move
+     */
+    int16_t get_mvvlva_score(const Move& move);
 
     const Engine& engine;
+    Movelist&     movelist;
 
-    int played = 0;
+    Move ttmove;
+    Move killer1 = Move::NO_MOVE;
+    Move killer2 = Move::NO_MOVE;
 
-    Movelist& movelist;
-
-    Move availableTTmove = Move::NO_MOVE;
-    Move ttmove          = Move::NO_MOVE;
-    int  ply;
+    int   ply;
+    Phase phase = Phase::TT;
+    int   index = 0;
 };
