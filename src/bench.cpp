@@ -4,7 +4,7 @@
 #include "perft.h"
 
 
-int bench::run(int depth) {
+void bench::run(int depth) {
     uint64_t nodes = 0;
 
     Limits limits;
@@ -35,6 +35,4 @@ int bench::run(int depth) {
 
     std::cout << "\n\ninfo string " << elapsed / 1000.0 << " seconds" << std::endl;
     std::cout << nodes << " nodes " << nps << " nps" << std::endl;
-
-    return 0;
 }
