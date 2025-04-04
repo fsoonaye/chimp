@@ -1,5 +1,8 @@
+# Ignore vscode formatting
 .vscode/
 
+# Ignore binaries
+bin/
 engine
 
 # Ignore macOS weird files
