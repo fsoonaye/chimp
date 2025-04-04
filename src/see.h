@@ -1,5 +1,5 @@
 #pragma once
-#include "../include/chess.hpp"
+#include "chess.hpp"
 
 using namespace chess;
 

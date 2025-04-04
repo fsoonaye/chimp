@@ -1,7 +1,4 @@
 #include "bench.h"
-#include "types.h"
-#include "engine.h"
-#include "perft.h"
 
 
 void bench::run(int depth) {

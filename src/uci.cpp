@@ -1,12 +1,4 @@
-// uci.cpp
-
-#include <algorithm>
 #include "uci.h"
-#include "engine.h"
-#include "types.h"
-#include "perft.h"
-#include "evaluate.h"
-#include "time.h"
 
 void UCIEngine::print_engine_info() {
     std::cout << "id name CHIMP\n";

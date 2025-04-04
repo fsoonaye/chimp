@@ -1,6 +1,9 @@
 #pragma once
+#include "chess.hpp"
+#include "types.h"
+#include "engine.h"
+#include "perft.h"
 
-#include "../include/chess.hpp"
 
 namespace bench {
 

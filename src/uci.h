@@ -1,7 +1,11 @@
 #pragma once
-
-#include "../include/chess.hpp"
+#include "chess.hpp"
 #include "engine.h"
+#include "evaluate.h"
+#include "perft.h"
+#include "types.h"
+#include "time.h"
+#include <algorithm>
 
 using namespace chess;
 
