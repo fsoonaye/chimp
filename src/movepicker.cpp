@@ -15,10 +15,6 @@ Move MovePicker::next_move() {
         if (ttmove != Move::NO_MOVE && is_in_movelist(ttmove))
             return ttmove;
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 4fa4c7d (docs: add detailed comments for better code understanding)
         [[fallthrough]];
 
     case Phase::SCORE :
@@ -26,10 +22,7 @@ Move MovePicker::next_move() {
 
         // Score all moves before starting to pick them
         score_moves();
-<<<<<<< HEAD
 
-=======
->>>>>>> 4fa4c7d (docs: add detailed comments for better code understanding)
         [[fallthrough]];
 
     case Phase::CAPTURES :
