@@ -3,6 +3,7 @@
 #include "types.h"
 #include "hash.h"
 #include <chrono>
+#include <cstring>
 
 using namespace chess;
 
