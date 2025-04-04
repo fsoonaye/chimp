@@ -1,6 +1,5 @@
-
 #pragma once
-#include "../include/chess.hpp"
+#include "chess.hpp"
 #include "arrays.h"
 
 using namespace chess;

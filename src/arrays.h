@@ -1,6 +1,6 @@
 #pragma once
+#include "chess.hpp"
 #include <array>
-#include "../include/chess.hpp"
 // clang-format off
 
 using namespace chess;

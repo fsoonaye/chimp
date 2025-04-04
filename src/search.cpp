@@ -1,5 +1,3 @@
-#include "../include/chess.hpp"
-#include "engine.h"
 #include "movepicker.h"
 #include "evaluate.h"
 #include "time.h"

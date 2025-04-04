@@ -1,5 +1,5 @@
 #pragma once
-
+#include "chess.hpp"
 #include "engine.h"
 #include "arrays.h"
 

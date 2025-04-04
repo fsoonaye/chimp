@@ -6,7 +6,7 @@ bool SEE(Board board, Move move, int treshold) {
 
     int swap = SEEvalues[static_cast<int>(board.at<PieceType>(to))] - treshold;
 
-    // If even before subtracting our own piece’s cost, the swap is losing, bail out
+    // If even before subtracting our own piece’s cost, the swap is losing, then refuse
     if (swap < 0)
         return false;
 
