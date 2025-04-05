@@ -12,11 +12,12 @@ Meaning, given a chess position (the root), it generates a move tree and explore
 - Alpha-beta Pruning
 - Iterative Deepening
 - Move Ordering
+  - Transposition Table
   - MVV-LVA for capture moves
   - Killers for quiet moves
 - Quiescence Search
-- Principal Variation Search
 - Mate Distance Pruning
+- Principal Variation Search
 
 ## Evaluation
 - Piece-Square Tables
@@ -54,13 +55,13 @@ position fen <fen-string> moves <move1> <move2> ...
 go depth <x>  
 go nodes <x>  
 go perft <x>  
-go wtime <x> btime <y> winc <z> binc <w>  
+go wtime <x> btime <y> winc <z> binc <w> movestogo <mtg>
 go movetime <x>    
 go mate <x>
 eval  
 ```
 
-Further explanations of these commands can be found in `uci.h` and on the internet, for instance [here](https://wbec-ridderkerk.nl/html/UCIProtocol.html) or in [the official stockfish documentation](https://official-stockfish.github.io/docs/stockfish-wiki/UCI-&-Commands.html).
+Further explanations of these commands can be found in `uci.h` and on the internet, for instance [here](https://wbec-ridderkerk.nl/html/UCIProtocol.html) or in the official [stockfish documentation](https://official-stockfish.github.io/docs/stockfish-wiki/UCI-&-Commands.html).
 
 
 # History
