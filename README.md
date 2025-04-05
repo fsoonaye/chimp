@@ -1,6 +1,5 @@
 # ♟️🐒 Chimp
 
-# Overview
 Chimp is a UCI-compatible chess engine following a depth-first search approach.
 
 Meaning, given a chess position (the root), it generates a move tree and explores as far as possible along each branch before backtracking. The engine searches for the best move within this tree, using optimization techniques to effectively prune unnecessary nodes in the tree.
@@ -13,11 +12,12 @@ Meaning, given a chess position (the root), it generates a move tree and explore
 - Alpha-beta Pruning
 - Iterative Deepening
 - Move Ordering
+  - Transposition Table
   - MVV-LVA for capture moves
   - Killers for quiet moves
 - Quiescence Search
-- Principal Variation Search
 - Mate Distance Pruning
+- Principal Variation Search
 
 ## Evaluation
 - Piece-Square Tables
@@ -44,17 +44,24 @@ make
 Chimp supports the following UCI (Universal Chess Interface) commands:
 
 ```
-uci
-isready
+uci  
+isready  
 ucinewgame
-position
-go
-quit
-stop
-eval
+quit  
+stop  
+  
+position startpos
+position fen <fen-string> moves <move1> <move2> ...    
+go depth <x>  
+go nodes <x>  
+go perft <x>  
+go wtime <x> btime <y> winc <z> binc <w> movestogo <mtg>
+go movetime <x>    
+go mate <x>
+eval  
 ```
 
-Further explanations of these commands can be found in `uci.h` and on the internet, for instance [here](https://wbec-ridderkerk.nl/html/UCIProtocol.html) or in [the official stockfish documentation](https://official-stockfish.github.io/docs/stockfish-wiki/UCI-&-Commands.html).
+Further explanations of these commands can be found in `uci.h` and on the internet, for instance [here](https://wbec-ridderkerk.nl/html/UCIProtocol.html) or in the official [stockfish documentation](https://official-stockfish.github.io/docs/stockfish-wiki/UCI-&-Commands.html).
 
 
 # History
@@ -77,15 +84,15 @@ While the guides I plan to write are still in progress, here’s a list of usefu
 ### Useful Tools: 
 - [OpenBench](https://github.com/fsoonaye/OpenBench): a Distributed SPRT framework.
 - [CuteChess](https://cutechess.com/): a GUI and cli testing tool for engine matches (also the more recent [FastChess](https://github.com/Disservin/fastchess?tab=readme-ov-file)).
-- [martinnovaak/enginetest](https://github.com/martinnovaak/enginetest): Tests your engine against Lichess puzzles.
-- [TerjeKir/EngineTests](https://github.com/TerjeKir/EngineTests): Tests your engine against "mate in x" problems, also has a speed-up comparison tool.  
+- [martinnovaak/enginetest](https://github.com/martinnovaak/enginetest): tests your engine against Lichess puzzles.
+- [TerjeKir/EngineTests](https://github.com/TerjeKir/EngineTests): tests your engine against "mate in x" problems, also has a speed-up comparison tool.  
 
 ### Wikis:
-- [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page): The ultimate reference for everything related to chess engine programming.  
-  - [Connorpasta](https://www.chessprogramming.org/Search_Progression): A practical progression guide for search implementation.
-  - [PeSTO](https://www.chessprogramming.org/PeSTO%27s_Evaluation_Function): A reasonable evaluation function when NNUEs are beyond the scope of your engine.
-- [Bruce Moreland's Programming Topics](https://web.archive.org/web/20070707012511/http://www.brucemo.com/compchess/programming/index.htm): An older yet remarkably pedagogical resource.
-- [The art of Chess Programming in Rust](https://rustic-chess.org/front_matter/about_book.html): A more modern, well-documented journey into creating a chess engine.
+- [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page): the ultimate reference for everything related to chess engine programming.  
+  - [Connorpasta](https://www.chessprogramming.org/Search_Progression): a practical progression guide for search implementation.
+  - [PeSTO](https://www.chessprogramming.org/PeSTO%27s_Evaluation_Function): a reasonable evaluation function when NNUEs are beyond the scope of your engine.
+- [Bruce Moreland's Programming Topics](https://web.archive.org/web/20070707012511/http://www.brucemo.com/compchess/programming/index.htm): an older yet remarkably pedagogical resource.
+- [The art of Chess Programming in Rust](https://rustic-chess.org/front_matter/about_book.html): a more modern, well-documented journey into creating a chess engine.
 
 
 ## Acknowledgements and Credit 
@@ -104,4 +111,4 @@ I have annotated concepts and arrays in my source code to properly credit the so
 ### Special thanks to:  
 - The [Stockfish Discord Server](https://discord.gg/GWDRS3kU6R) and mainly the [Engine Programming Discord Server](https://discord.com/invite/F6W6mMsTGN), whose active members answered countless questions and helped me progress on this journey.  
 - **[Disservin](https://github.com/Disservin)**, the author of [SmallBrain](https://github.com/Disservin/Smallbrain), for the brilliant **[Chess Library in C++](https://github.com/Disservin/chess-library)** used in Chimp (primarily for move generation and board data structures).
-- **[Andrew Grant](https://github.com/AndyGrant)**, the author of [OpenBench](https://github.com/fsoonaye/OpenBench), for his availability on the OpenBench Discord server.
+- **[Andrew Grant](https://github.com/AndyGrant)**, the author of [OpenBench](https://github.com/fsoonaye/OpenBench), for his great framework and his availability on the [OpenBench Discord server](https://discord.com/invite/9MVg7fBTpM).
