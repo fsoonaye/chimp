@@ -103,4 +103,4 @@ I have annotated concepts and arrays in my source code to properly credit the so
 ### Special thanks to:  
 - The [Stockfish Discord Server](https://discord.gg/GWDRS3kU6R) and mainly the [Engine Programming Discord Server](https://discord.com/invite/F6W6mMsTGN), whose active members answered countless questions and helped me progress on this journey.  
 - **[Disservin](https://github.com/Disservin)**, the author of [SmallBrain](https://github.com/Disservin/Smallbrain), for the brilliant **[Chess Library in C++](https://github.com/Disservin/chess-library)** used in Chimp (primarily for move generation and board data structures).
-- **[Andrew Grant](https://github.com/AndyGrant)**, the author of [OpenBench](https://github.com/fsoonaye/OpenBench), for his great framework and his availability on the OpenBench Discord server.
+- **[Andrew Grant](https://github.com/AndyGrant)**, the author of [OpenBench](https://github.com/fsoonaye/OpenBench), for his great framework and his availability on the [OpenBench Discord server](https://discord.com/invite/9MVg7fBTpM).
