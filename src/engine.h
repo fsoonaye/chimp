@@ -22,10 +22,7 @@ enum NodeType {
 
 /**
  * @class Engine
- * @brief Core chess engine implementation handling search, evaluation, and time management
- * 
- * This class encapsulates the search algorithm, move ordering, time management,
- * and other components required for calculating the best move in a given position.
+ * @brief Core chess engine implementation handling search and time management
  */
 class Engine {
    public:
@@ -45,6 +42,9 @@ class Engine {
 
     /**
      * @brief Principal alpha-beta negamax search implementation
+     *
+     * called recursively until depth reaches 0
+     *
      * @tparam nodetype Type of node (PV, NON_PV, ROOT) affecting search behavior
      * @param alpha Lower bound of the search window
      * @param beta Upper bound of the search window
@@ -57,6 +57,9 @@ class Engine {
 
     /**
      * @brief Quiescence search to resolve tactical sequences
+     *
+     * Called recursively, once negamax_search() reaches a leaf node (depth 0)
+     *
      * @param alpha Lower bound of the search window
      * @param beta Upper bound of the search window
      * @param depth Remaining search depth (usually negative in quiescence)
@@ -127,7 +130,7 @@ class Engine {
     /**
      * @brief Initializes tables used for move ordering and search heuristics
      * 
-     * Clears the principal variation table and killer moves table.
+     * Clears the principal variation tables and killer moves table.
      */
     void init_heuristic_tables() {
         std::memset(pv_length, 0, sizeof(pv_length));
@@ -152,8 +155,8 @@ class Engine {
      * @brief Outputs information about the current search to the console
      * @param depth Current search depth
      * @param score Best score found at this depth
-     * @param nodes Number of nodes searched
-     * @param time_ms Time spent searching in milliseconds
+     * @param nodes Total number of nodes searched since depth 1
+     * @param time_ms Time spent searching in milliseconds since depth 1
      */
     void print_search_info(int depth, int score, uint64_t nodes, int64_t time_ms) {
         std::string score_type;
