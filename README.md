@@ -7,7 +7,7 @@ Meaning, given a chess position (the root), it generates a move tree and explore
 
 # Features
 
-## Search
+### Search
 - Negamax Search
 - Alpha-beta Pruning
 - Iterative Deepening
@@ -19,7 +19,7 @@ Meaning, given a chess position (the root), it generates a move tree and explore
 - Mate Distance Pruning
 - Principal Variation Search
 
-## Evaluation
+### Evaluation
 - Piece-Square Tables
 - Game Phase Interpolation
 
@@ -81,13 +81,13 @@ One thing I *definitely* plan to write soon is a comprehensive guide to **chess 
 
 While the guides I plan to write are still in progress, here’s a list of useful resources I’ve used or depended on to deepen my knowledge.
 
-## Useful Tools: 
+### Useful Tools: 
 - [OpenBench](https://github.com/fsoonaye/OpenBench): a Distributed SPRT framework.
 - [CuteChess](https://cutechess.com/): a GUI and cli testing tool for engine matches (also the more recent [FastChess](https://github.com/Disservin/fastchess?tab=readme-ov-file)).
 - [martinnovaak/enginetest](https://github.com/martinnovaak/enginetest): tests your engine against Lichess puzzles.
 - [TerjeKir/EngineTests](https://github.com/TerjeKir/EngineTests): tests your engine against "mate in x" problems, also has a speed-up comparison tool.  
 
-## Wikis:
+### Wikis:
 - [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page): the ultimate reference for everything related to chess engine programming.  
   - [Connorpasta](https://www.chessprogramming.org/Search_Progression): a practical progression guide for search implementation.
   - [PeSTO](https://www.chessprogramming.org/PeSTO%27s_Evaluation_Function): a reasonable evaluation function when NNUEs are beyond the scope of your engine.
@@ -99,7 +99,7 @@ While the guides I plan to write are still in progress, here’s a list of usefu
 
 I have annotated concepts and arrays in my source code to properly credit the sources where I’ve borrowed ideas or implementations directly from other engines. However, if I’ve missed an attribution, I encourage the authors of these works to reach out for additional recognition or to request removal, if necessary.
 
-## Engines that have been notable sources of inspiration:
+### Engines that have been notable sources of inspiration:
 - [SmallBrain](https://github.com/Disservin/Smallbrain)  
 - [Rice](https://github.com/rafid-dev/rice/tree/main) 
 - [Weiss](https://github.com/cutechess/weiss)
