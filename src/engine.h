@@ -1,5 +1,5 @@
 #pragma once
-#include "../include/chess.hpp"
+#include "chess.hpp"
 #include "types.h"
 #include "hash.h"
 #include <chrono>
@@ -7,23 +7,73 @@
 
 using namespace chess;
 
+/**
+ * @enum NodeType
+ * @brief Defines the type of node in the search tree
+ * 
+ * Different node types receive different treatment during search,
+ * affecting pruning decisions and move ordering strategies.
+ */
 enum NodeType {
     PV,
     NON_PV,
     ROOT
 };
 
+/**
+ * @class Engine
+ * @brief Core chess engine implementation handling search and time management
+ */
 class Engine {
    public:
-    // search functions
+    /**
+     * @brief Calculates the best move for the current position
+     * @param depth Maximum search depth (defaults to MAX_PLY)
+     * @return Best move found within the given constraints
+     */
     Move get_bestmove(int depth = MAX_PLY);
+
+    /**
+     * @brief Performs iterative deepening search to find the best move
+     * @param MAX_PLY Maximum search depth to consider
+     * @return Best move found from the latest fully searched depth
+     */
     Move iterative_deepening(int MAX_PLY);
 
+    /**
+     * @brief Principal alpha-beta negamax search implementation
+     *
+     * called recursively until depth reaches 0
+     *
+     * @tparam nodetype Type of node (PV, NON_PV, ROOT) affecting search behavior
+     * @param alpha Lower bound of the search window
+     * @param beta Upper bound of the search window
+     * @param depth Remaining search depth
+     * @param ply Current distance from root position
+     * @return Position score from the perspective of the side to move
+     */
     template<NodeType nodetype>
     int negamax_search(int alpha, int beta, int depth, int ply);
+
+    /**
+     * @brief Quiescence search to resolve tactical sequences
+     *
+     * Called recursively, once negamax_search() reaches a leaf node (depth 0)
+     *
+     * @param alpha Lower bound of the search window
+     * @param beta Upper bound of the search window
+     * @param depth Remaining search depth (usually negative in quiescence)
+     * @param ply Current distance from root position
+     * @return Stable position score after capturing sequences
+     */
     int quiescence_search(int alpha, int beta, int depth, int ply);
 
-    // reset function for ucinewgame
+
+    /**
+     * @brief Resets the engine to initial state for a new game
+     * 
+     * called when receiving ucinewgame UCI instruction
+     */
     void reset() {
         board       = Board::fromFen(constants::STARTPOS);
         nodes       = 0;
@@ -32,7 +82,10 @@ class Engine {
         std::fill(&killer_moves[0][0], &killer_moves[0][0] + MAX_PLY * 2, Move::NO_MOVE);
     }
 
-    // time functions
+    /**
+     * @brief Checks if the search should be terminated based on limits
+     * @return True if search should stop, false otherwise
+     */
     bool time_is_up() {
         if (stop_search)
             return true;
@@ -65,18 +118,30 @@ class Engine {
         return false;
     }
 
-    int64_t get_elapsedtime() const {
+    /**
+     * @brief Returns elapsed time since search start in milliseconds
+     * @return Elapsed time in milliseconds
+     */
+    inline int64_t get_elapsedtime() const {
         auto currtime = std::chrono::high_resolution_clock::now();
         return std::chrono::duration_cast<std::chrono::milliseconds>(currtime - starttime).count();
     }
 
+    /**
+     * @brief Initializes tables used for move ordering and search heuristics
+     * 
+     * Clears the principal variation tables and killer moves table.
+     */
     void init_heuristic_tables() {
         std::memset(pv_length, 0, sizeof(pv_length));
         std::fill(&pv_table[0][0], &pv_table[0][0] + MAX_PLY * MAX_PLY, Move::NO_MOVE);
         std::fill(&killer_moves[0][0], &killer_moves[0][0] + MAX_PLY * 2, Move::NO_MOVE);
     }
 
-    // print functions
+    /**
+     * @brief Generates a string representation of the principal variation
+     * @return String containing the sequence of best moves
+     */
     std::string get_pv_string() {
         std::stringstream ss;
 
@@ -86,6 +151,13 @@ class Engine {
         return ss.str();
     }
 
+    /**
+     * @brief Outputs information about the current search to the console
+     * @param depth Current search depth
+     * @param score Best score found at this depth
+     * @param nodes Total number of nodes searched since depth 1
+     * @param time_ms Time spent searching in milliseconds since depth 1
+     */
     void print_search_info(int depth, int score, uint64_t nodes, int64_t time_ms) {
         std::string score_type;
         int         score_value;

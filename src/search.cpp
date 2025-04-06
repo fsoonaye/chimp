@@ -1,5 +1,3 @@
-#include "../include/chess.hpp"
-#include "engine.h"
 #include "movepicker.h"
 #include "evaluate.h"
 #include "time.h"
@@ -243,14 +241,15 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
         if (score > bestscore)
         {
             bestscore = score;
-            bestmove  = move;
 
             if (score > alpha)
-                alpha = score;
+            {
+                bestmove = move;
+                alpha    = score;
+            }
         }
 
         if (score >= beta)
-            // return bestscore;
             break;
     }
 
