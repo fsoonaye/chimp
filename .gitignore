@@ -2,7 +2,7 @@
 .vscode/
 
 # Ignore binaries
-bin/
+build/
 engine
 
 # Ignore macOS weird files
@@ -14,6 +14,7 @@ engine
 *.out
 *.exe
 *.o
+*.d
 *.obj
 *.a
 *.so
