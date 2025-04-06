@@ -70,7 +70,7 @@ This chess engine is the culmination of my ongoing exploration into the rich and
 
 In its current state, Chimp has, for now, absolutely no pretentions of revolutionizing the field of chess programming. Instead, its purpose is to serve as a personal milestone: a proof of my journey and dedication to grasp the fundamentals of this fascinating domain. 
 
-I have only implemented techniques and concepts that I *believe* to understand, one at a time, prioritizing clarity and simplicity. In many ways, this codebase embodies the kind of resource I wish I'd had as an entry point.
+I have only implemented techniques and concepts that I *believe* to understand, one at a time, prioritizing clarity and simplicity. In many ways, this repository embodies the kind of resource I wish I'd had as an entry point.
 
 This project also served as a playground for improving my C++ skills and documenting what I learned. Over time, I’ve built a significant collection of notes. One day, I might turn these notes into a guide to chess programming.  
 
