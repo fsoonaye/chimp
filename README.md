@@ -52,12 +52,12 @@ stop
   
 position startpos
 position fen <fen-string> moves <move1> <move2> ...    
-go depth <x>  
-go nodes <x>  
-go perft <x>  
-go wtime <x> btime <y> winc <z> binc <w> movestogo <mtg>
-go movetime <x>    
-go mate <x>
+go depth <>  
+go nodes <>  
+go perft <>  
+go wtime <> btime <> winc <> binc <> movestogo <>
+go movetime <>    
+go mate <>
 eval  
 ```
 
