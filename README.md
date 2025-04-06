@@ -104,8 +104,8 @@ I have annotated concepts and arrays in my source code to properly credit the so
 - [Rice](https://github.com/rafid-dev/rice/tree/main) 
 - [Weiss](https://github.com/cutechess/weiss)
 - [Stormphrax](https://github.com/Ciekce/Stormphrax)
-- [Stockfish](https://github.com/official-stockfish/Stockfish) (The strongest open-source chess engine in the world)  
-- [Vice](https://github.com/bluefeversoft/vice) (I have not looked at it for quite some time but I had to give credit) 
+- [Stockfish](https://github.com/official-stockfish/Stockfish): The strongest open-source chess engine in the world
+- [Vice](https://github.com/bluefeversoft/vice): I have not looked at it for quite some time but I had to give credit 
   
 
 ### Special thanks to:  
