@@ -2,12 +2,12 @@
 
 Chimp is a UCI-compatible chess engine following a depth-first search approach.
 
-Meaning, given a chess position (the root), it generates a move tree and explores as far as possible along each branch before backtracking. The engine searches for the best move within this tree, using optimization techniques to effectively prune unnecessary nodes in the tree.
+Meaning, given a chess position (the root), it generates a move tree and explores as far as possible along each branch before backtracking. The engine searches for the best move to play amongst the root's children, using optimization techniques to efficiently prune branches that are unlikely to lead to favorable outcomes.
 
 
 # Features
 
-## Search
+### Search
 - Negamax Search
 - Alpha-beta Pruning
 - Iterative Deepening
@@ -19,7 +19,7 @@ Meaning, given a chess position (the root), it generates a move tree and explore
 - Mate Distance Pruning
 - Principal Variation Search
 
-## Evaluation
+### Evaluation
 - Piece-Square Tables
 - Game Phase Interpolation
 
@@ -52,12 +52,12 @@ stop
   
 position startpos
 position fen <fen-string> moves <move1> <move2> ...    
-go depth <x>  
-go nodes <x>  
-go perft <x>  
-go wtime <x> btime <y> winc <z> binc <w> movestogo <mtg>
-go movetime <x>    
-go mate <x>
+go depth <>  
+go nodes <>  
+go perft <>  
+go wtime <> btime <> winc <> binc <> movestogo <>
+go movetime <>    
+go mate <>
 eval  
 ```
 
@@ -70,14 +70,14 @@ This chess engine is the culmination of my ongoing exploration into the rich and
 
 In its current state, Chimp has, for now, absolutely no pretentions of revolutionizing the field of chess programming. Instead, its purpose is to serve as a personal milestone: a proof of my journey and dedication to grasp the fundamentals of this fascinating domain. 
 
-I have only implemented techniques and concepts that I *believe* to understand, one at a time, prioritizing clarity and simplicity. In many ways, this codebase embodies the kind of resource I wish I'd had as an entry point.
+I have only implemented techniques and concepts that I *believe* to understand, one at a time, prioritizing clarity and simplicity. In many ways, this repository embodies the kind of resource I wish I'd had as an entry point.
 
 This project also served as a playground for improving my C++ skills and documenting what I learned. Over time, I’ve built a significant collection of notes. One day, I might turn these notes into a guide to chess programming.  
 
 One thing I *definitely* plan to write soon is a comprehensive guide to **chess engine testing**. Having all this information gathered in one place and thoroughly explained would have saved me so much time!
 
 
-## Resources  
+# Resources  
 
 While the guides I plan to write are still in progress, here’s a list of useful resources I’ve used or depended on to deepen my knowledge.
 
@@ -95,7 +95,7 @@ While the guides I plan to write are still in progress, here’s a list of usefu
 - [The art of Chess Programming in Rust](https://rustic-chess.org/front_matter/about_book.html): a more modern, well-documented journey into creating a chess engine.
 
 
-## Acknowledgements and Credit 
+# Acknowledgements and Credit 
 
 I have annotated concepts and arrays in my source code to properly credit the sources where I’ve borrowed ideas or implementations directly from other engines. However, if I’ve missed an attribution, I encourage the authors of these works to reach out for additional recognition or to request removal, if necessary.
 
@@ -104,8 +104,8 @@ I have annotated concepts and arrays in my source code to properly credit the so
 - [Rice](https://github.com/rafid-dev/rice/tree/main) 
 - [Weiss](https://github.com/cutechess/weiss)
 - [Stormphrax](https://github.com/Ciekce/Stormphrax)
-- [Stockfish](https://github.com/official-stockfish/Stockfish) (The strongest open-source chess engine in the world)  
-- [Vice](https://github.com/bluefeversoft/vice) (I have not looked at it for quite some time but I had to give credit) 
+- [Stockfish](https://github.com/official-stockfish/Stockfish): The strongest open-source chess engine in the world.
+- [Vice](https://github.com/bluefeversoft/vice): I have not looked at it for quite some time but I had to give credit.
   
 
 ### Special thanks to:  
