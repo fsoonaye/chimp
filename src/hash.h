@@ -15,7 +15,7 @@ using namespace chess;
 struct TTEntry {
     uint64_t key   = 0;
     int      depth = 0;
-    int      score = 0;
+    int      score = SCORE_NONE;
     Move     move  = Move::NO_MOVE;
     Bound    bound = BOUND_NONE;
 };
