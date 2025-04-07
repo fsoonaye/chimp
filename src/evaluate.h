@@ -11,3 +11,6 @@ using namespace chess;
  * @return Static evaluation score in centipawns
  */
 int evaluate(Board board);
+
+void calculate_material_score(const Board& board, int& mg_score, int& eg_score, int& game_phase);
+void calculate_mobility_score(const Board& board, int& mg_score, int& eg_score);
