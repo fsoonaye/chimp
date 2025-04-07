@@ -3,10 +3,10 @@
 # **************************************************************************** #
 
 # Specify the name of the output binary
-NAME := engine
+EXE ?= engine
 
 # Compiler and flags
-CXX := clang++
+CXX ?= clang++
 CXXFLAGS := -std=c++20 -Wall -Wextra -O3 -MMD -MP
 LDFLAGS :=
 
@@ -35,10 +35,10 @@ DEPENDS := $(patsubst $(OBJ_DIR)/%.o,$(DEP_DIR)/%.d,$(OBJECTS))
 
 
 # Default target
-all: $(NAME)
+all: $(EXE)
 
 # Link the final executable
-$(NAME): $(OBJECTS)
+$(EXE): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $@ $(LDFLAGS)
 
 # Compile source files into objects
@@ -58,7 +58,7 @@ clean:
 	rm -f $(OBJ_DIR)/*.o $(DEP_DIR)/*.d
 
 fclean: clean
-	rm -rf $(OBJ_DIR) $(NAME)
+	rm -rf $(OBJ_DIR) $(EXE)
 
 re: fclean all
 
