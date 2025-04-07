@@ -5,30 +5,32 @@ using namespace chess;
 
 constexpr int MAX_PLY = 64;
 
-constexpr int VALUE_MATE = 32000;
-constexpr int VALUE_INF  = VALUE_MATE + 1;
-constexpr int VALUE_NONE = VALUE_MATE + 2;
+enum Score : int {
+    SCORE_MATE = 32000,
+    SCORE_INF  = SCORE_MATE + 1,
+    SCORE_NONE = SCORE_MATE + 2
+};
 
 /**
  * @brief Checks if a score indicates a checkmate
  * @param score Score to check
  * @return True if the score represents a checkmate
  */
-inline bool is_mate(int score) { return std::abs(score) >= VALUE_MATE - MAX_PLY; }
+inline bool is_mate(int score) { return std::abs(score) >= SCORE_MATE - MAX_PLY; }
 
 /**
  * @brief Calculates a mate score at a specific ply
  * @param ply Distance from root position
  * @return Score indicating checkmate at the given ply
  */
-inline int mate_in(int ply) { return VALUE_MATE - ply; }
+inline int mate_in(int ply) { return SCORE_MATE - ply; }
 
 /**
  * @brief Calculates a mated score at a specific ply
  * @param ply Distance from root position
  * @return Score indicating being checkmated at the given ply
  */
-inline int mated_in(int ply) { return ply - VALUE_MATE; }
+inline int mated_in(int ply) { return ply - SCORE_MATE; }
 
 /**
  * @enum Bound
