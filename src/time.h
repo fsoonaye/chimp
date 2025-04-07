@@ -4,6 +4,8 @@
 /**
  * @brief Calculates the optimal and maximum time to spend on the current move
  * 
+ * Heavily inspired from Smallbrain for now. 
+ * 
  * @param available_time Time remaining on the clock in milliseconds
  * @param inc Time increment per move in milliseconds
  * @param movestogo Number of moves until the next time control
