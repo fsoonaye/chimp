@@ -52,7 +52,7 @@ class Engine {
      * @param ply Current distance from root position
      * @return Position score from the perspective of the side to move
      */
-    template<NodeType nodetype>
+    template<NodeType node>
     int negamax_search(int alpha, int beta, int depth, int ply);
 
     /**
@@ -66,6 +66,7 @@ class Engine {
      * @param ply Current distance from root position
      * @return Stable position score after capturing sequences
      */
+    template<NodeType node>
     int quiescence_search(int alpha, int beta, int depth, int ply);
 
 
@@ -165,7 +166,7 @@ class Engine {
         if (is_mate(score))
         {
             score_type        = "mate";
-            int mate_distance = (VALUE_MATE - std::abs(score) + 1) / 2;
+            int mate_distance = (SCORE_MATE - std::abs(score) + 1) / 2;
             score_value       = score > 0 ? mate_distance : -mate_distance;
         }
         else
