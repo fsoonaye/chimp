@@ -47,7 +47,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
 
     // Checking node type
     bool is_root_node = (ply == 0);
-    bool is_pv_node   = (nodetype != NON_PV);
+    bool is_pv_node   = (node != NON_PV);
 
     pv_length[ply] = ply;
 
@@ -185,7 +185,7 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
         return evaluate(board);
 
     // checking node type
-    constexpr bool is_pv_node = nodetype == PV;
+    constexpr bool is_pv_node = (node == PV);
 
     // draw detection
     if (board.isRepetition(1 + is_pv_node) || board.isHalfMoveDraw())
