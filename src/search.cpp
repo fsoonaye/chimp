@@ -23,7 +23,7 @@ Move Engine::iterative_deepening(int max_depth) {
 
     for (int depth = 1; depth <= max_depth; depth++)
     {
-        score = negamax_search<PV>(-VALUE_INF, VALUE_INF, depth, 0);
+        score = negamax_search<PV>(-SCORE_INF, SCORE_INF, depth, 0);
 
         if (time_is_up())
             // current depth has been incompletely searched
@@ -38,27 +38,23 @@ Move Engine::iterative_deepening(int max_depth) {
     return bestmove;
 }
 
-template<NodeType nodetype>
+template<NodeType node>
 int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     nodes++;
 
     if (time_is_up())
         return 0;
 
-    // Initializing variables
+    // Checking node type
     bool is_root_node = (ply == 0);
     bool is_pv_node   = (nodetype != NON_PV);
 
     pv_length[ply] = ply;
 
-    if (depth == 0)
-        return quiescence_search(alpha, beta, depth, ply);
-
-
     if (!is_root_node)
     {
         // Draw or repetition detection
-        if (board.isRepetition() || board.isHalfMoveDraw())
+        if (board.isRepetition(1 + is_pv_node) || board.isHalfMoveDraw())
             return 0;
 
         // Mate distance pruning
@@ -68,15 +64,22 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
             return alpha;
     }
 
+    // Check extension
+    if (board.inCheck())
+        depth++;
+
+    if (depth == 0)
+        return quiescence_search<node>(alpha, beta, depth, ply);
+
     // probing TT
     uint64_t poskey  = board.hash();
     Move     ttmove  = Move::NO_MOVE;
     bool     tthit   = false;
     TTEntry* tte     = tt.probe(poskey, ttmove, tthit);
-    int      ttscore = tthit ? tte->score : VALUE_NONE;
+    int      ttscore = tthit ? tte->score : SCORE_NONE;
 
     // TT cutoff
-    if (!is_root_node && !is_pv_node && tthit && tte->depth >= depth)
+    if (tthit && !is_root_node && !is_pv_node && tte->depth >= depth)
     {
         if (tte->bound == BOUND_EXACT)
             return ttscore;
@@ -92,7 +95,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     }
 
     // initializing variables
-    int  bestscore = -VALUE_INF;
+    int  bestscore = -SCORE_INF;
     Move bestmove  = Move::NO_MOVE;
     Move move      = Move::NO_MOVE;
     int  score;
@@ -113,7 +116,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
         // Principal Variation Search
         if (is_root_node)
             // For the first move → full window search.
-            score = -negamax_search<nodetype>(-beta, -alpha, depth - 1, ply + 1);
+            score = -negamax_search<node>(-beta, -alpha, depth - 1, ply + 1);
 
         else
         {
@@ -146,19 +149,19 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
                 // update current pv length from the ply just after
                 pv_length[ply] = pv_length[ply + 1];
             }
-        }
 
-        if (score >= beta)
-        {
-            // Store killer moves
-            if (move != killer_moves[ply][0] && !board.isCapture(move))
+            if (score >= beta)
             {
-                // Shift the previous killer and store the new one
-                killer_moves[ply][1] = killer_moves[ply][0];
-                killer_moves[ply][0] = move;
-            }
+                // Store killer moves
+                if (move != killer_moves[ply][0] && !board.isCapture(move))
+                {
+                    // Shift the previous killer and store the new one
+                    killer_moves[ply][1] = killer_moves[ply][0];
+                    killer_moves[ply][0] = move;
+                }
 
-            break;
+                break;
+            }
         }
     }
 
@@ -171,7 +174,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     return bestscore;
 }
 
-
+template<NodeType node>
 int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
     nodes++;
 
@@ -181,31 +184,30 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
     if (ply >= MAX_PLY)
         return evaluate(board);
 
+    // checking node type
+    constexpr bool is_pv_node = nodetype == PV;
+
     // draw detection
-    if (board.isRepetition() || board.isHalfMoveDraw())
+    if (board.isRepetition(1 + is_pv_node) || board.isHalfMoveDraw())
         return 0;
+
 
     // probing TT
     uint64_t poskey  = board.hash();
     Move     ttmove  = Move::NO_MOVE;
     bool     tthit   = false;
     TTEntry* tte     = tt.probe(poskey, ttmove, tthit);
-    int      ttscore = tthit ? tte->score : VALUE_NONE;
+    int      ttscore = tthit ? tte->score : SCORE_NONE;
 
     // TT cutoff
-    if (tthit && tte->depth >= depth)
+    if (tthit && !is_pv_node && ttscore != SCORE_NONE && tte->bound != BOUND_NONE)
     {
-        if (tte->bound == BOUND_EXACT)
+        // clang-format off
+        if ((tte->bound == BOUND_EXACT) ||
+            (tte->bound == BOUND_LOWER && ttscore >= beta) ||
+            (tte->bound == BOUND_UPPER && ttscore <= alpha))
             return ttscore;
-
-        else if (tte->bound == BOUND_LOWER)
-            alpha = std::max(alpha, ttscore);
-
-        else if (tte->bound == BOUND_UPPER)
-            beta = std::min(beta, ttscore);
-
-        if (alpha >= beta)
-            return ttscore;
+        // clang-format on
     }
 
     // prematurily evaluating the board to check if we're out of bounds or in need to update alpha
@@ -231,11 +233,11 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
         // SEE pruning
-        if (!board.inCheck() && !SEE(board, move, 1))
+        if (!board.inCheck() && !SEE(board, move, 0))
             continue;
 
         board.makeMove(move);
-        int score = -quiescence_search(-beta, -alpha, depth, ply + 1);
+        int score = -quiescence_search<node>(-beta, -alpha, depth, ply + 1);
         board.unmakeMove(move);
 
         if (score > bestscore)
@@ -247,17 +249,16 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
                 bestmove = move;
                 alpha    = score;
             }
-        }
 
-        if (score >= beta)
-            break;
+            if (score >= beta)
+                break;
+        }
     }
 
     // Store in TT
-    Bound bound = bestscore >= beta         ? BOUND_LOWER
-                : bestmove != Move::NO_MOVE ? BOUND_EXACT
-                                            : BOUND_UPPER;
-    tt.store(poskey, depth, bestscore, bestmove, bound);
+    // No exact bound and depth = 0 in quiescence search
+    Bound bound = bestscore >= beta ? BOUND_LOWER : BOUND_UPPER;
+    tt.store(poskey, 0, bestscore, bestmove, bound);
 
 
     return bestscore;
