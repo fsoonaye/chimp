@@ -20,14 +20,17 @@ Meaning, given a chess position (the root), it generates a move tree and explore
 - Principal Variation Search
 
 ### Evaluation
-- Piece-Square Tables
+- Material Score
+  - Piece-Square Tables
+  - Bishop Pair Bonus
+- Mobility Score 
 - Game Phase Interpolation
 
 # Building
 
 Chimp requires the following tools to build and run:
 
-- **Compiler**: `clang++` (version >=20). Note: `g++` is currently not supported.  
+- **Compiler**: `clang++`.
 - **Build System**: `make`.
 
 To build Chimp, you can run the following commands:
