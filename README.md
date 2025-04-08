@@ -94,6 +94,7 @@ While the guides I plan to write are still in progress, here’s a list of usefu
 - [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page): the ultimate reference for everything related to chess engine programming.  
   - [Connorpasta](https://www.chessprogramming.org/Search_Progression): a practical progression guide for search implementation.
   - [PeSTO](https://www.chessprogramming.org/PeSTO%27s_Evaluation_Function): a reasonable evaluation function when NNUEs are beyond the scope of your engine.
+- [Stockfish's old Hand-Crafted Evaluation](https://hxim.github.io/Stockfish-Evaluation-Guide/): a (really) advanced evaluation function when NNUEs are beyond the scope of your engine.
 - [Bruce Moreland's Programming Topics](https://web.archive.org/web/20070707012511/http://www.brucemo.com/compchess/programming/index.htm): an older yet remarkably pedagogical resource.
 - [The art of Chess Programming in Rust](https://rustic-chess.org/front_matter/about_book.html): a more modern, well-documented journey into creating a chess engine.
 
