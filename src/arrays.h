@@ -20,7 +20,7 @@ static constexpr int16_t mvvlva_array[7][7] = {
 };
 
 
-// values are from https://www.chessprogramming.org/PeSTO%27s_Evaluation_Function
+// values are from https://hxim.github.io/Stockfish-Evaluation-Guide/
 namespace pst {
     // Static piece values for middlegame
     static constexpr std::array<int, 6> mg_value = {
