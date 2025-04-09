@@ -3,13 +3,6 @@
 
 using namespace chess;
 
-/**
- * @brief Material values used for Static Exchange Evaluation
- * 
- * Material values for each piece type used specifically in SEE calculations.
- * Values are from weiss for now.
- */
-static int SEEvalues[6] = {0, 100, 450, 450, 650, 1250};
 
 /**
  * @brief Performs Static Exchange Evaluation for a move
