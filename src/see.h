@@ -24,3 +24,11 @@ static int SEEvalues[6] = {0, 100, 450, 450, 650, 1250};
  * @return True if the move meets or exceeds the threshold score
  */
 bool SEE(Board board, Move move, int threshold);
+
+/**
+ * @brief Material values used for Static Exchange Evaluation
+ * 
+ * Material values for each piece type used specifically in SEE calculations.
+ * Values are inspired from weiss for now.
+ */
+static constexpr int SEEvalues[7] = {100, 450, 460, 650, 1250, 0, 0};
