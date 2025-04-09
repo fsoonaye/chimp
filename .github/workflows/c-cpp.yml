@@ -1,0 +1,84 @@
+name: Chess Engine CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-ubuntu:
+    name: Ubuntu Build & Benchmark
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install clang
+      run: |
+        sudo apt update
+        sudo apt install -y clang
+    
+    - name: Build with clang
+      run: |
+        CXX=clang++ make
+    
+    - name: Run benchmark
+      run: ./engine bench > ubuntu-bench.txt
+    
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@master
+      with:
+        name: ubuntu-benchmark
+        path: ubuntu-bench.txt
+
+  build-windows:
+    name: Windows Build & Benchmark
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup MinGW
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: mingw64
+        update: true
+        install: mingw-w64-x86_64-gcc mingw-w64-x86_64-clang make git
+    
+    - name: Build with clang
+      shell: msys2 {0}
+      run: |
+        CXX=clang++ make EXE=engine.exe
+    
+    - name: Run benchmark
+      shell: msys2 {0}
+      run: ./engine.exe bench > windows-bench.txt
+    
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@master
+      with:
+        name: windows-benchmark
+        path: windows-bench.txt
+
+  compare-benchmarks:
+    name: Compare Benchmark Results
+    needs: [build-ubuntu, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download Ubuntu benchmark
+      uses: actions/download-artifact@master
+      with:
+        name: ubuntu-benchmark
+    
+    - name: Download Windows benchmark
+      uses: actions/download-artifact@master
+      with:
+        name: windows-benchmark
+    
+    - name: Compare benchmark results
+      run: |
+        echo "=== BENCHMARK COMPARISON ==="
+        echo "UBUNTU:"
+        grep -A 1 "info string" ubuntu-bench.txt
+        echo ""
+        echo "WINDOWS:"
+        grep -A 1 "info string" windows-bench.txt
