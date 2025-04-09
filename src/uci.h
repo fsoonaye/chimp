@@ -50,5 +50,7 @@ class UCIEngine {
      */
     void print_engine_info();
 
+    void debug(std::istringstream& is);
+
     Engine engine;
 };

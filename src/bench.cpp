@@ -18,6 +18,7 @@ void bench::run(int depth) {
         std::cout << "\nPosition: " << i++ << "/" << benchfens.size() << " " << fen << std::endl;
 
         Engine engine;
+        engine.debug = false;
         engine.limits = limits;
         engine.board.setFen(fen);
         engine.get_bestmove(depth);
