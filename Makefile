@@ -7,7 +7,7 @@ EXE ?= engine
 
 # Compiler and flags
 CXX ?= clang++
-CXXFLAGS := -std=c++20 -Wall -Wextra -O3 -MMD -MP
+CXXFLAGS := -std=c++20 -Wall -Wextra -Wpedantic -O3 -MMD -MP
 LDFLAGS :=
 
 # Architecture-specific optimizations
