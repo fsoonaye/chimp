@@ -99,6 +99,15 @@ void UCIEngine::go(std::istringstream& iss) {
 
 void UCIEngine::eval() { std::cout << evaluate(engine.board) << std::endl; }
 
+void UCIEngine::debug(std::istringstream& is){
+    std::string token;
+    is >> token;
+    if (token == "on")
+        engine.debug = true;
+    
+    else if (token == "off")
+        engine.debug = false;
+} 
 
 void UCIEngine::loop() {
     std::string token, input;
@@ -126,6 +135,9 @@ void UCIEngine::loop() {
 
         else if (token == "eval")
             eval();
+
+        else if (token == "debug")
+            debug(is);
 
     } while (token != "quit" && token != "stop");
 }

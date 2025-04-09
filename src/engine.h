@@ -158,7 +158,10 @@ class Engine {
      * @param nodes Total number of nodes searched since depth 1
      * @param time_ms Time spent searching in milliseconds since depth 1
      */
-    void print_search_info(int depth, int score, uint64_t nodes, int64_t time_ms) {
+    inline void print_search_info(int depth, int score, uint64_t nodes, int64_t time_ms) {
+        if (!debug)
+            return;
+
         std::string score_type;
         int         score_value;
 
@@ -200,4 +203,6 @@ class Engine {
     std::chrono::high_resolution_clock::time_point starttime;
 
     TranspositionTable tt{};
+
+    bool debug = true;
 };
