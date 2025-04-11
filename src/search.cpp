@@ -51,10 +51,6 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
 
     pv_length[ply] = ply;
 
-    if (depth == 0)
-        return quiescence_search(alpha, beta, depth, ply);
-
-
     if (!is_root_node)
     {
         // Draw or repetition detection
@@ -67,6 +63,15 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
         if (alpha >= beta)
             return alpha;
     }
+
+    // check extension
+    if (board.inCheck())
+        // if we're in check, we should not go into quiescence search
+        depth++;
+
+    if (depth == 0)
+        return quiescence_search(alpha, beta, depth, ply);
+
 
     // probing TT
     uint64_t poskey  = board.hash();
