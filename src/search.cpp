@@ -91,6 +91,16 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
             return ttscore;
     }
 
+    // Reverse Futility Pruning (RFP)
+    if (!board.inCheck() && !is_pv_node && ttmove != Move::NO_MOVE && !board.isCapture(ttmove))
+    {
+        int static_eval = tthit ? ttscore : evaluate(board);
+        int margin      = 150 * depth;
+
+        if (static_eval >= beta + margin)
+            return static_eval;
+    }
+
     // initializing variables
     int  bestscore = -VALUE_INF;
     Move bestmove  = Move::NO_MOVE;
