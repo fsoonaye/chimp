@@ -51,7 +51,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
 
     pv_length[ply] = ply;
 
-    if (depth == 0)
+    if (depth <= 0)
         return quiescence_search(alpha, beta, depth, ply);
 
 
@@ -89,6 +89,19 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
 
         if (alpha >= beta)
             return ttscore;
+    }
+
+    int static_eval = tthit ? ttscore : evaluate(board);
+
+    // Null Move Pruning (NMP)
+    if (!is_pv_node && depth >= 3 && static_eval >= beta && !board.inCheck())
+    {
+        board.makeNullMove();
+        int nullmove_score = -negamax_search<NON_PV>(-beta, -beta + 1, depth - 3, ply + 1);
+        board.unmakeNullMove();
+
+        if (nullmove_score >= beta)
+            return nullmove_score;
     }
 
     // initializing variables
