@@ -27,7 +27,7 @@ class UCIEngine {
     void loop();
 
     /**
-     * @brief Processes the UCI 'position" command
+     * @brief Processes the UCI 'position' command
      * @param is Input stream containing position parameters
      */
     void position(std::istringstream& is);
