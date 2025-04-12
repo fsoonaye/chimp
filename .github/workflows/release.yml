@@ -5,27 +5,15 @@ on:
       - "v*"
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        include:
-          - os: ubuntu-latest
-            output_os: linux
-          - os: windows-latest
-            output_os: windows
-          - os: macos-latest
-            output_os: darwin
-    
+  build-linux:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v3
       
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v1
-        with:
-          version: "17.0"
+      - name: Install clang
+        run: |
+          sudo apt update
+          sudo apt install -y clang
       
       - name: Get Version from Tag
         id: get_version
@@ -49,30 +37,103 @@ jobs:
           fi
           echo "ARCH=$ARCH" >> $GITHUB_OUTPUT
       
-      - name: Create Build Directory
-        run: mkdir -p build
-      
       - name: Build Chess Engine
-        shell: bash
         run: |
-          make CXX=clang++ EXE=chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-${{ matrix.output_os }}-${{ steps.get_arch.outputs.ARCH }}
-      
-      - name: Add .exe Extension on Windows
-        if: matrix.os == 'windows-latest'
-        shell: bash
-        run: |
-          mv chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-${{ matrix.output_os }}-${{ steps.get_arch.outputs.ARCH }} chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-${{ matrix.output_os }}-${{ steps.get_arch.outputs.ARCH }}.exe
+          CXX=clang++ make EXE=chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-linux-${{ steps.get_arch.outputs.ARCH }}
       
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-${{ matrix.output_os }}-${{ steps.get_arch.outputs.ARCH }}
-          path: |
-            chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-${{ matrix.output_os }}-${{ steps.get_arch.outputs.ARCH }}*
+          name: chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-linux-${{ steps.get_arch.outputs.ARCH }}
+          path: chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-linux-${{ steps.get_arch.outputs.ARCH }}
           if-no-files-found: error
-  
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Get Version from Tag
+        id: get_version
+        shell: bash
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG#v}
+          MAJOR_MINOR=$(echo $VERSION | cut -d. -f1,2)
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "MAJOR_MINOR=$MAJOR_MINOR" >> $GITHUB_OUTPUT
+      
+      - name: Get Architecture
+        id: get_arch
+        shell: bash
+        run: |
+          ARCH=$(uname -m)
+          if [ "$ARCH" = "x86_64" ]; then
+            ARCH="x64"
+          elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+            ARCH="arm64"
+          fi
+          echo "ARCH=$ARCH" >> $GITHUB_OUTPUT
+      
+      - name: Build Chess Engine
+        run: |
+          CXX=clang++ make EXE=chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-darwin-${{ steps.get_arch.outputs.ARCH }}
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-darwin-${{ steps.get_arch.outputs.ARCH }}
+          path: chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-darwin-${{ steps.get_arch.outputs.ARCH }}
+          if-no-files-found: error
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup MinGW
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: mingw64
+          update: true
+          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-clang make git
+      
+      - name: Get Version from Tag
+        id: get_version
+        shell: bash
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG#v}
+          MAJOR_MINOR=$(echo $VERSION | cut -d. -f1,2)
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "MAJOR_MINOR=$MAJOR_MINOR" >> $GITHUB_OUTPUT
+      
+      - name: Get Architecture
+        id: get_arch
+        shell: bash
+        run: |
+          ARCH=$(uname -m)
+          if [ "$ARCH" = "x86_64" ]; then
+            ARCH="x64"
+          elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+            ARCH="arm64"
+          fi
+          echo "ARCH=$ARCH" >> $GITHUB_OUTPUT
+      
+      - name: Build Chess Engine
+        shell: msys2 {0}
+        run: |
+          CXX=clang++ make EXE=chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-windows-${{ steps.get_arch.outputs.ARCH }}.exe
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-windows-${{ steps.get_arch.outputs.ARCH }}
+          path: chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-windows-${{ steps.get_arch.outputs.ARCH }}.exe
+          if-no-files-found: error
+
   release:
-    needs: build
+    needs: [build-linux, build-macos, build-windows]
     runs-on: ubuntu-latest
     steps:
       - name: Download Artifacts
