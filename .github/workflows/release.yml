@@ -1,77 +1,88 @@
-name: Build and Release
-
+name: Release Chess Engine
 on:
   push:
     tags:
       - "v*"
-    branches:
-      - "release"
 
 jobs:
   build:
-    name: Build Binaries
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            output_os: linux
+          - os: windows-latest
+            output_os: windows
+          - os: macos-latest
+            output_os: darwin
+    
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
-      - name: Determine Version
-        id: version
+      
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "17.0"
+      
+      - name: Get Version from Tag
+        id: get_version
+        shell: bash
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/}  # Get version from tag
-          else
-            VERSION=dev-${GITHUB_SHA::8}     # Use short SHA for branch-based
+          TAG=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG#v}
+          MAJOR_MINOR=$(echo $VERSION | cut -d. -f1,2)
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "MAJOR_MINOR=$MAJOR_MINOR" >> $GITHUB_OUTPUT
+      
+      - name: Get Architecture
+        id: get_arch
+        shell: bash
+        run: |
+          ARCH=$(uname -m)
+          if [ "$ARCH" = "x86_64" ]; then
+            ARCH="x64"
+          elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+            ARCH="arm64"
           fi
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "Version is $VERSION"
-
-      - name: Install Dependencies
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get -y install clang make
-        # No need to install dependencies on macOS and Windows since Clang/make are built-in or pre-installed
-
-      - name: Build Binary
+          echo "ARCH=$ARCH" >> $GITHUB_OUTPUT
+      
+      - name: Create Build Directory
+        run: mkdir -p build
+      
+      - name: Build Chess Engine
+        shell: bash
         run: |
-          OS=$(uname | tr '[:upper:]' '[:lower:]')  # Detect OS
-          ARCH=$(uname -m)                          # Detect architecture
-          mkdir -p dist                             # Create output directory
-          make EXE=chimp-${VERSION}-${OS}-${ARCH}
-          mv chimp-${VERSION}-${OS}-${ARCH} dist/
-
-      - name: Archive Binary
+          make CXX=clang++ EXE=chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-${{ matrix.output_os }}-${{ steps.get_arch.outputs.ARCH }}
+      
+      - name: Add .exe Extension on Windows
+        if: matrix.os == 'windows-latest'
+        shell: bash
         run: |
-          cd dist
-          zip chimp-${VERSION}-${{ matrix.os }}-${ARCH}.zip chimp-${VERSION}-${{ matrix.os }}-${ARCH}
-
+          mv chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-${{ matrix.output_os }}-${{ steps.get_arch.outputs.ARCH }} chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-${{ matrix.output_os }}-${{ steps.get_arch.outputs.ARCH }}.exe
+      
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: chimp-${{ matrix.os }}-${ARCH}-${{ env.VERSION }}
-          path: dist/chimp-${VERSION}-${{ matrix.os }}-${ARCH}.zip
-
+          name: chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-${{ matrix.output_os }}-${{ steps.get_arch.outputs.ARCH }}
+          path: |
+            chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-${{ matrix.output_os }}-${{ steps.get_arch.outputs.ARCH }}*
+          if-no-files-found: error
+  
   release:
     needs: build
-    name: Create Release
     runs-on: ubuntu-latest
     steps:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
-
+      
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          files: chimp-*/*
           tag_name: ${{ github.ref_name }}
-          release_name: "Chimp ${{ github.event.ref_name || env.VERSION }}"
-          body: |
-            Automated release of Chimp ${{ github.event.ref_name || env.VERSION }}.
-            This release includes binaries for:
-            - Linux
-            - macOS
-            - Windows
-          files: dist/*.zip
+          body: "Chess Engine ${{ github.ref_name }} release."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
