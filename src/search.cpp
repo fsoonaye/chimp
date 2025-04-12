@@ -223,10 +223,6 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
     Movelist moves;
     movegen::legalmoves<movegen::MoveGenType::CAPTURE>(moves, board);
 
-    // check for checkmate or stalemate
-    if (moves.empty())
-        return board.inCheck() ? mated_in(ply) : 0;
-
     MovePicker mp(*this, moves, ttmove, ply);
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
