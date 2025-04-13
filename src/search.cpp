@@ -57,9 +57,18 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
 
     if (!is_root_node)
     {
-        // Draw or repetition detection
-        if (board.isRepetition() || board.isHalfMoveDraw())
+        // Draw detection
+        if (board.isRepetition() || board.isInsufficientMaterial())
             return 0;
+
+        if (board.isHalfMoveDraw())
+        {
+            auto [reason, result] = board.getHalfMoveDrawType();
+            if (result == GameResult::DRAW)
+                return 0;
+            else if (result == GameResult::LOSE)
+                return mated_in(ply);
+        }
 
         // Mate distance pruning
         alpha = std::max(alpha, mated_in(ply));
@@ -181,9 +190,18 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
     if (ply >= MAX_PLY)
         return evaluate(board);
 
-    // draw detection
-    if (board.isRepetition() || board.isHalfMoveDraw())
+    // Draw detection
+    if (board.isRepetition() || board.isInsufficientMaterial())
         return 0;
+
+    if (board.isHalfMoveDraw())
+    {
+        auto [reason, result] = board.getHalfMoveDrawType();
+        if (result == GameResult::DRAW)
+            return 0;
+        else if (result == GameResult::LOSE)
+            return mated_in(ply);
+    }
 
     // probing TT
     uint64_t poskey  = board.hash();
