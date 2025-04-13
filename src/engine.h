@@ -52,7 +52,6 @@ class Engine {
      * @param ply Current distance from root position
      * @return Position score from the perspective of the side to move
      */
-    template<NodeType nodetype>
     int negamax_search(int alpha, int beta, int depth, int ply);
 
     /**
@@ -62,11 +61,10 @@ class Engine {
      *
      * @param alpha Lower bound of the search window
      * @param beta Upper bound of the search window
-     * @param depth Remaining search depth (usually negative in quiescence)
      * @param ply Current distance from root position
      * @return Stable position score after capturing sequences
      */
-    int quiescence_search(int alpha, int beta, int depth, int ply);
+    int quiescence_search(int alpha, int beta, int ply);
 
 
     /**
