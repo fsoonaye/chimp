@@ -24,14 +24,13 @@ Move Engine::iterative_deepening(int max_depth) {
     for (int depth = 1; depth <= max_depth; depth++)
     {
         score = negamax_search<PV>(-VALUE_INF, VALUE_INF, depth, 0);
-
+        bestmove = pv_table[0][0];
+        
         if (time_is_up())
             // current depth has been incompletely searched
-            // we only return the bestmove and print pv for the latest fully searched depth
+            // we print pv for the latest fully searched depth
             break;
-
-        bestmove = pv_table[0][0];
-
+        
         print_search_info(depth, score, nodes, get_elapsedtime());
     }
 
@@ -43,7 +42,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     nodes++;
 
     if (time_is_up())
-        return 0;
+        return VALUE_NONE;
 
     // Initializing variables
     bool is_root_node = (ply == 0);
@@ -125,6 +124,11 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
                 score = -negamax_search<PV>(-beta, -alpha, depth - 1, ply + 1);
         }
 
+        // Early exit if search should be stopped: we should not be updating bounds or bestscore
+        if (stop_search)
+            return VALUE_NONE;
+        assert(score != -VALUE_NONE);
+
         board.unmakeMove(move);
 
         if (score > bestscore)
@@ -176,7 +180,7 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
     nodes++;
 
     if (time_is_up())
-        return 0;
+        return VALUE_NONE;
 
     if (ply >= MAX_PLY)
         return evaluate(board);
@@ -233,6 +237,11 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
         board.makeMove(move);
         int score = -quiescence_search(-beta, -alpha, depth, ply + 1);
         board.unmakeMove(move);
+
+        // Early exit if search should be stopped: we should not be updating bounds or bestscore
+        if (stop_search)
+            return VALUE_NONE;
+        assert(score != -VALUE_NONE);
 
         if (score > bestscore)
         {
