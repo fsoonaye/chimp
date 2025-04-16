@@ -24,14 +24,13 @@ Move Engine::iterative_deepening(int max_depth) {
     for (int depth = 1; depth <= max_depth; depth++)
     {
         score = negamax_search<PV>(-VALUE_INF, VALUE_INF, depth, 0);
-
+        bestmove = pv_table[0][0];
+        
         if (time_is_up())
             // current depth has been incompletely searched
-            // we only return the bestmove and print pv for the latest fully searched depth
+            // we print pv for the latest fully searched depth
             break;
-
-        bestmove = pv_table[0][0];
-
+        
         print_search_info(depth, score, nodes, get_elapsedtime());
     }
 
