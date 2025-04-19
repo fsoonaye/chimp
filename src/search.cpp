@@ -176,9 +176,9 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     }
 
     // Store in TT
-    Bound bound = bestscore >= beta         ? BOUND_LOWER
-                : bestmove != Move::NO_MOVE ? BOUND_EXACT
-                                            : BOUND_UPPER;
+    Bound bound = bestscore >= beta                         ? BOUND_LOWER
+                : (is_pv_node && bestmove != Move::NO_MOVE) ? BOUND_EXACT
+                                                            : BOUND_UPPER;
     tt.store(poskey, depth, bestscore, bestmove, bound);
 
     return bestscore;
