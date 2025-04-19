@@ -23,14 +23,14 @@ Move Engine::iterative_deepening(int max_depth) {
 
     for (int depth = 1; depth <= max_depth; depth++)
     {
-        score = negamax_search<PV>(-VALUE_INF, VALUE_INF, depth, 0);
+        score    = negamax_search<PV>(-VALUE_INF, VALUE_INF, depth, 0);
         bestmove = pv_table[0][0];
-        
+
         if (time_is_up())
             // current depth has been incompletely searched
             // we print pv for the latest fully searched depth
             break;
-        
+
         print_search_info(depth, score, nodes, get_elapsedtime());
     }
 
@@ -68,11 +68,11 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     }
 
     // probing TT
-    uint64_t poskey  = board.hash();
-    Move     ttmove  = Move::NO_MOVE;
-    bool     tthit   = false;
-    TTEntry* tte     = tt.probe(poskey, ttmove, tthit);
-    int      ttscore = tthit ? tte->score : VALUE_NONE;
+    uint64_t       poskey  = board.hash();
+    Move           ttmove  = Move::NO_MOVE;
+    bool           tthit   = false;
+    const TTEntry* tte     = tt.probe(poskey, ttmove, tthit);
+    int            ttscore = tthit ? tte->score : VALUE_NONE;
 
     // TT cutoff
     if (!is_root_node && !is_pv_node && tthit && tte->depth >= depth)
@@ -190,11 +190,11 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
         return 0;
 
     // probing TT
-    uint64_t poskey  = board.hash();
-    Move     ttmove  = Move::NO_MOVE;
-    bool     tthit   = false;
-    TTEntry* tte     = tt.probe(poskey, ttmove, tthit);
-    int      ttscore = tthit ? tte->score : VALUE_NONE;
+    uint64_t       poskey  = board.hash();
+    Move           ttmove  = Move::NO_MOVE;
+    bool           tthit   = false;
+    const TTEntry* tte     = tt.probe(poskey, ttmove, tthit);
+    int            ttscore = tthit ? tte->score : VALUE_NONE;
 
     // TT cutoff
     if (tthit && tte->depth >= depth)

@@ -54,7 +54,7 @@ class TranspositionTable {
      * @param tt_hit Reference to indicate whether a matching entry was found
      * @return Pointer to the retrieved entry or nullptr if not found
      */
-    TTEntry* probe(uint64_t key, Move& ttmove, bool& tt_hit);
+    const TTEntry* probe(uint64_t key, Move& ttmove, bool& tt_hit);
 
     /**
      * @brief Computes the index in the table for a given hash key
