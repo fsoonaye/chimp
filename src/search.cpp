@@ -82,7 +82,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     int            ttscore = tthit ? tte->score : VALUE_NONE;
 
     // TT cutoff
-    if (!is_root_node && !is_pv_node && tthit && tte->depth >= depth)
+    if (!is_root_node && !is_pv_node && tthit && tte->depth >= depth && tte->score != VALUE_NONE)
     {
         if (tte->bound == BOUND_EXACT)
             return ttscore;
