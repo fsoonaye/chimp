@@ -37,7 +37,7 @@ Move Engine::iterative_deepening(int max_depth) {
     return bestmove;
 }
 
-template<NodeType nodetype>
+template<Node node>
 int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     nodes++;
 
@@ -46,12 +46,12 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
 
     // Initializing variables
     bool is_root_node = (ply == 0);
-    bool is_pv_node   = (nodetype != NON_PV);
+    bool is_pv_node   = (node != NON_PV);
 
     pv_length[ply] = ply;
 
     if (depth == 0)
-        return quiescence_search(alpha, beta, depth, ply);
+        return quiescence_search<node>(alpha, beta, ply);
 
 
     if (!is_root_node)
@@ -112,7 +112,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
         // Principal Variation Search
         if (is_root_node)
             // For the first move → full window search.
-            score = -negamax_search<nodetype>(-beta, -alpha, depth - 1, ply + 1);
+            score = -negamax_search<node>(-beta, -alpha, depth - 1, ply + 1);
 
         else
         {
@@ -175,8 +175,8 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     return bestscore;
 }
 
-
-int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
+template<Node node>
+int Engine::quiescence_search(int alpha, int beta, int ply) {
     nodes++;
 
     if (time_is_up())
@@ -184,6 +184,8 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
 
     if (ply >= MAX_PLY)
         return evaluate(board);
+
+    bool is_pv_node = (node == PV);
 
     // draw detection
     if (board.isRepetition() || board.isHalfMoveDraw())
@@ -235,7 +237,7 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
             continue;
 
         board.makeMove(move);
-        int score = -quiescence_search(-beta, -alpha, depth, ply + 1);
+        int score = -quiescence_search<node>(-beta, -alpha, ply + 1);
         board.unmakeMove(move);
 
         // Early exit if search should be stopped: we should not be updating bounds or bestscore

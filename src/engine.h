@@ -14,10 +14,9 @@ using namespace chess;
  * Different node types receive different treatment during search,
  * affecting pruning decisions and move ordering strategies.
  */
-enum NodeType {
+enum Node {
     PV,
-    NON_PV,
-    ROOT
+    NON_PV
 };
 
 /**
@@ -45,14 +44,14 @@ class Engine {
      *
      * called recursively until depth reaches 0
      *
-     * @tparam nodetype Type of node (PV, NON_PV, ROOT) affecting search behavior
+     * @tparam node Type of node (PV, NON_PV) affecting search behavior
      * @param alpha Lower bound of the search window
      * @param beta Upper bound of the search window
      * @param depth Remaining search depth
      * @param ply Current distance from root position
      * @return Position score from the perspective of the side to move
      */
-    template<NodeType nodetype>
+    template<Node node>
     int negamax_search(int alpha, int beta, int depth, int ply);
 
     /**
@@ -60,13 +59,14 @@ class Engine {
      *
      * Called recursively, once negamax_search() reaches a leaf node (depth 0)
      *
+     * @tparam node Type of node (PV, NON_PV) affecting search behavior
      * @param alpha Lower bound of the search window
      * @param beta Upper bound of the search window
-     * @param depth Remaining search depth (usually negative in quiescence)
      * @param ply Current distance from root position
      * @return Stable position score after capturing sequences
      */
-    int quiescence_search(int alpha, int beta, int depth, int ply);
+    template<Node node>
+    int quiescence_search(int alpha, int beta, int ply);
 
 
     /**
