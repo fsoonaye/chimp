@@ -57,7 +57,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     if (!is_root_node)
     {
         // Draw or repetition detection
-        if (board.isRepetition() || board.isHalfMoveDraw())
+        if (board.isRepetition(1 + is_pv_node) || board.isHalfMoveDraw())
             return 0;
 
         // Mate distance pruning
@@ -188,7 +188,7 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
     bool is_pv_node = (node == PV);
 
     // draw detection
-    if (board.isRepetition() || board.isHalfMoveDraw())
+    if (board.isRepetition(1 + is_pv_node) || board.isHalfMoveDraw())
         return 0;
 
     // probing TT
