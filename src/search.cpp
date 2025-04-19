@@ -110,7 +110,8 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
         board.makeMove(move);
 
         // Principal Variation Search
-        if (is_root_node)
+        bool is_first_move = (bestscore == -VALUE_INF);
+        if (is_first_move)
             // For the first move → full window search.
             score = -negamax_search<node>(-beta, -alpha, depth - 1, ply + 1);
 
