@@ -30,6 +30,9 @@ inline int mate_in(int ply) { return VALUE_MATE - ply; }
  */
 inline int mated_in(int ply) { return ply - VALUE_MATE; }
 
+constexpr int DEPTH_QS           = 0;
+constexpr int DEPTH_ENTRY_OFFSET = -3;
+
 /**
  * @enum Bound
  * @brief Type of bound for transposition table entries

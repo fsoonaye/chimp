@@ -199,18 +199,15 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
     int            ttscore = tthit ? tte->score : VALUE_NONE;
 
     // TT cutoff
-    if (tthit && tte->depth >= depth)
+    if (tthit && !is_pv_node)
     {
         if (tte->bound == BOUND_EXACT)
             return ttscore;
 
-        else if (tte->bound == BOUND_LOWER)
-            alpha = std::max(alpha, ttscore);
+        else if (tte->bound == BOUND_LOWER && ttscore >= beta)
+            return ttscore;
 
-        else if (tte->bound == BOUND_UPPER)
-            beta = std::min(beta, ttscore);
-
-        if (alpha >= beta)
+        else if (tte->bound == BOUND_UPPER && ttscore <= alpha)
             return ttscore;
     }
 
@@ -261,11 +258,8 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
     }
 
     // Store in TT
-    Bound bound = bestscore >= beta         ? BOUND_LOWER
-                : bestmove != Move::NO_MOVE ? BOUND_EXACT
-                                            : BOUND_UPPER;
-    tt.store(poskey, depth, bestscore, bestmove, bound);
-
+    Bound bound = bestscore >= beta ? BOUND_LOWER : BOUND_UPPER;
+    tt.store(poskey, DEPTH_QS, bestscore, bestmove, bound);
 
     return bestscore;
 }
