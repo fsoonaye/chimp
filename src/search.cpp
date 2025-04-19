@@ -39,7 +39,6 @@ Move Engine::iterative_deepening(int max_depth) {
 
 template<Node node>
 int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
-    nodes++;
 
     if (time_is_up())
         return VALUE_NONE;
@@ -107,6 +106,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     MovePicker mp(*this, moves, ttmove, ply);
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
+        nodes++;
         board.makeMove(move);
 
         // Principal Variation Search
@@ -178,7 +178,6 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
 
 template<Node node>
 int Engine::quiescence_search(int alpha, int beta, int ply) {
-    nodes++;
 
     if (time_is_up())
         return VALUE_NONE;
@@ -234,6 +233,7 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
         if (!board.inCheck() && !SEE(board, move, 1))
             continue;
 
+        nodes++;
         board.makeMove(move);
         int score = -quiescence_search<node>(-beta, -alpha, ply + 1);
         board.unmakeMove(move);
