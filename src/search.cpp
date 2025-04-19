@@ -111,7 +111,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
 
         // Principal Variation Search
         bool is_first_move = (bestscore == -VALUE_INF);
-        if (is_first_move)
+        if (is_first_move || is_root_node)
             // For the first move → full window search.
             score = -negamax_search<nodetype>(-beta, -alpha, depth - 1, ply + 1);
 
