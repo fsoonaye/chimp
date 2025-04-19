@@ -9,6 +9,7 @@ void TranspositionTable::store(uint64_t key, int depth, int score, Move move, Bo
     if (tte->key != key || move != Move::NO_MOVE)
         tte->move = move;
 
+    // Overwrite less valuable entries
     if (tte->key != key || depth > tte->depth || bound == BOUND_EXACT)
     {
         tte->key   = key;
@@ -19,10 +20,10 @@ void TranspositionTable::store(uint64_t key, int depth, int score, Move move, Bo
 }
 
 
-const TTEntry* TranspositionTable::probe(uint64_t key, Move& ttmove, bool& tt_hit) {
+const TTEntry* TranspositionTable::probe(uint64_t key, Move& ttmove, bool& tthit) {
     const TTEntry* tte = &table[index(key)];
 
-    tt_hit = (tte->key == key);
+    tthit  = (tte->key == key);
     ttmove = tte->move;
     return tte;
 }
