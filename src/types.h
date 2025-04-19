@@ -9,6 +9,15 @@ constexpr int VALUE_MATE = 32000;
 constexpr int VALUE_INF  = VALUE_MATE + 1;
 constexpr int VALUE_NONE = VALUE_MATE + 2;
 
+constexpr int VALUE_MATE_IN_PLY  = VALUE_MATE - MAX_PLY;
+constexpr int VALUE_MATED_IN_PLY = -VALUE_MATE_IN_PLY;
+
+constexpr int VALUE_TB_WIN             = VALUE_MATE_IN_PLY;
+constexpr int VALUE_TB_LOSS            = -VALUE_TB_WIN;
+constexpr int VALUE_TB_WIN_IN_MAX_PLY  = VALUE_TB_WIN - MAX_PLY;
+constexpr int VALUE_TB_LOSS_IN_MAX_PLY = -VALUE_TB_WIN_IN_MAX_PLY;
+
+
 /**
  * @brief Checks if a score indicates a checkmate
  * @param score Score to check
@@ -29,6 +38,22 @@ inline int mate_in(int ply) { return VALUE_MATE - ply; }
  * @return Score indicating being checkmated at the given ply
  */
 inline int mated_in(int ply) { return ply - VALUE_MATE; }
+
+inline int to_relative_mate_score(int score, int ply) {
+    return (score >= VALUE_TB_WIN_IN_MAX_PLY    ? score + ply
+            : score <= VALUE_TB_LOSS_IN_MAX_PLY ? score - ply
+                                                : score);
+}
+
+inline int from_relative_mate_score(int score, int ply) {
+    if (score == VALUE_NONE)
+        return VALUE_NONE;
+
+    return (score >= VALUE_TB_WIN_IN_MAX_PLY    ? score - ply
+            : score <= VALUE_TB_LOSS_IN_MAX_PLY ? score + ply
+                                                : score);
+}
+
 
 constexpr int DEPTH_QS           = 0;
 constexpr int DEPTH_ENTRY_OFFSET = -3;
