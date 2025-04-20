@@ -1,144 +1,88 @@
 name: Release Chess Engine
+
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v3
-      
-      - name: Install clang
-        run: |
-          sudo apt update
-          sudo apt install -y clang
-      
-      - name: Get Version from Tag
-        id: get_version
-        shell: bash
-        run: |
-          TAG=${GITHUB_REF#refs/tags/}
-          VERSION=${TAG#v}
-          MAJOR_MINOR=$(echo $VERSION | cut -d. -f1,2)
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "MAJOR_MINOR=$MAJOR_MINOR" >> $GITHUB_OUTPUT
-      
-      - name: Get Architecture
-        id: get_arch
-        shell: bash
-        run: |
-          ARCH=$(uname -m)
-          if [ "$ARCH" = "x86_64" ]; then
-            ARCH="x64"
-          elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-            ARCH="arm64"
-          fi
-          echo "ARCH=$ARCH" >> $GITHUB_OUTPUT
-      
-      - name: Build Chess Engine
-        run: |
-          CXX=clang++ make EXE=chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-linux-${{ steps.get_arch.outputs.ARCH }}
-      
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
         with:
-          name: chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-linux-${{ steps.get_arch.outputs.ARCH }}
-          path: chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-linux-${{ steps.get_arch.outputs.ARCH }}
-          if-no-files-found: error
+          fetch-depth: 0  # Allow fetching tags
 
-  build-macos:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Get Version from Tag
-        id: get_version
-        shell: bash
-        run: |
-          TAG=${GITHUB_REF#refs/tags/}
-          VERSION=${TAG#v}
-          MAJOR_MINOR=$(echo $VERSION | cut -d. -f1,2)
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "MAJOR_MINOR=$MAJOR_MINOR" >> $GITHUB_OUTPUT
-      
-      - name: Get Architecture
-        id: get_arch
-        shell: bash
-        run: |
-          ARCH=$(uname -m)
-          if [ "$ARCH" = "x86_64" ]; then
-            ARCH="x64"
-          elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-            ARCH="arm64"
-          fi
-          echo "ARCH=$ARCH" >> $GITHUB_OUTPUT
-      
-      - name: Build Chess Engine
-        run: |
-          CXX=clang++ make EXE=chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-darwin-${{ steps.get_arch.outputs.ARCH }}
-      
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-darwin-${{ steps.get_arch.outputs.ARCH }}
-          path: chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-darwin-${{ steps.get_arch.outputs.ARCH }}
-          if-no-files-found: error
+      - name: Install Dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt update && sudo apt install -y clang
 
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Setup MinGW
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: mingw64
-          update: true
-          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-clang make git
-      
-      - name: Get Version from Tag
-        id: get_version
+      - name: Install Dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        run: choco install llvm make -y
+
+      - name: Determine Version and EXE name
+        id: vars
         shell: bash
         run: |
-          TAG=${GITHUB_REF#refs/tags/}
-          VERSION=${TAG#v}
-          MAJOR_MINOR=$(echo $VERSION | cut -d. -f1,2)
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "MAJOR_MINOR=$MAJOR_MINOR" >> $GITHUB_OUTPUT
-      
-      - name: Get Architecture
-        id: get_arch
-        shell: bash
-        run: |
+          # Get architecture
           ARCH=$(uname -m)
           if [ "$ARCH" = "x86_64" ]; then
             ARCH="x64"
           elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
             ARCH="arm64"
           fi
-          echo "ARCH=$ARCH" >> $GITHUB_OUTPUT
-      
-      - name: Build Chess Engine
-        shell: msys2 {0}
+
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+            echo "Trigger: tag, VERSION=$VERSION"
+          else
+            VERSION=$(git describe --tags `git rev-list --tags --max-count=1`)
+            VERSION="${VERSION#v}"
+            echo "Trigger: manual, VERSION=$VERSION"
+          fi
+          MAJOR_MINOR=$(echo $VERSION | cut -d. -f1,2)
+
+          if [ "${{ matrix.os }}" == "windows-latest" ]; then
+            EXE_NAME="chimp-${MAJOR_MINOR}-windows-${ARCH}.exe"
+          else
+            EXE_NAME="chimp-${MAJOR_MINOR}-linux-${ARCH}"
+          fi
+
+          echo "EXE_NAME=${EXE_NAME}" >> $GITHUB_ENV
+          echo "UPLOAD_NAME=${EXE_NAME}" >> $GITHUB_OUTPUT
+          echo "MAJOR_MINOR=${MAJOR_MINOR}" >> $GITHUB_OUTPUT
+
+      - name: Build Chess Engine (Linux)
+        if: matrix.os == 'ubuntu-latest'
         run: |
-          CXX=clang++ make EXE=chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-windows-${{ steps.get_arch.outputs.ARCH }}.exe
-      
+          CXX=clang++ make EXE="$EXE_NAME"
+
+      - name: Build Chess Engine (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          CXX=clang++ make EXE="$EXE_NAME"
+        shell: bash
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-windows-${{ steps.get_arch.outputs.ARCH }}
-          path: chimp-${{ steps.get_version.outputs.MAJOR_MINOR }}-windows-${{ steps.get_arch.outputs.ARCH }}.exe
+          name: ${{ steps.vars.outputs.UPLOAD_NAME }}
+          path: ${{ env.EXE_NAME }}
           if-no-files-found: error
 
   release:
-    needs: [build-linux, build-macos, build-windows]
+    needs: build
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
-      
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
