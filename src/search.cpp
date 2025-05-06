@@ -150,13 +150,14 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
             if (score > alpha && score < beta && is_pv_node)
                 score = -negamax_search<PV>(-beta, -alpha, depth - 1, ply + 1);
         }
+        }
+
+        board.unmakeMove(move);
 
         // Early exit if search should be stopped: we should not be updating bounds or bestscore
         if (stop_search)
             return VALUE_NONE;
         assert(score != -VALUE_NONE);
-
-        board.unmakeMove(move);
 
         if (score > bestscore)
         {
