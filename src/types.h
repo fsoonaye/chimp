@@ -9,6 +9,9 @@ constexpr int VALUE_MATE = 32000;
 constexpr int VALUE_INF  = VALUE_MATE + 1;
 constexpr int VALUE_NONE = VALUE_MATE + 2;
 
+constexpr int VALUE_MATE_IN_PLY  = VALUE_MATE - MAX_PLY;
+constexpr int VALUE_MATED_IN_PLY = -VALUE_MATE_IN_PLY;
+
 /**
  * @brief Checks if a score indicates a checkmate
  * @param score Score to check
