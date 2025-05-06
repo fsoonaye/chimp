@@ -183,7 +183,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
         if (score >= beta)
         {
             // Store killer moves
-            if (move != killer_moves[ply][0] && !board.isCapture(move))
+            if (!is_capture && move != killer_moves[ply][0])
             {
                 // Shift the previous killer and store the new one
                 killer_moves[ply][1] = killer_moves[ply][0];
