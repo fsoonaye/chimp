@@ -25,12 +25,12 @@ Move Engine::iterative_deepening(int max_depth) {
     {
         score    = negamax_search<PV>(-VALUE_INF, VALUE_INF, depth, 0);
         bestmove = pv_table[0][0];
-        
+
         if (time_is_up())
             // current depth has been incompletely searched
             // we print pv for the latest fully searched depth
             break;
-        
+
         print_search_info(depth, score, nodes, get_elapsedtime());
     }
 
@@ -136,20 +136,20 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
         }
         else
         {
-        // Principal Variation Search
-        if (is_root_node)
-            // For the first move → full window search.
-            score = -negamax_search<nodetype>(-beta, -alpha, depth - 1, ply + 1);
+            // Principal Variation Search
+            if (movecount == 1)
+                // For the first move → full window search.
+                score = -negamax_search<nodetype>(-beta, -alpha, depth - 1, ply + 1);
 
-        else
-        {
-            // First, search with a null window [-α-1, -α].
-            score = -negamax_search<NON_PV>(-alpha - 1, -alpha, depth - 1, ply + 1);
+            else
+            {
+                // First, search with a null window [-α-1, -α].
+                score = -negamax_search<NON_PV>(-alpha - 1, -alpha, depth - 1, ply + 1);
 
-            // If the score ∈ [α, β], it might be better than α, so re-search with full window.
-            if (score > alpha && score < beta && is_pv_node)
-                score = -negamax_search<PV>(-beta, -alpha, depth - 1, ply + 1);
-        }
+                // If the score ∈ [α, β], it might be better than α, so re-search with full window.
+                if (score > alpha && score < beta && is_pv_node)
+                    score = -negamax_search<PV>(-beta, -alpha, depth - 1, ply + 1);
+            }
         }
 
         board.unmakeMove(move);
