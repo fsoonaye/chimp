@@ -4,6 +4,7 @@
 #include "hash.h"
 #include <chrono>
 #include <cstring>
+#include <cmath>
 
 using namespace chess;
 
