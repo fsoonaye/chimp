@@ -48,9 +48,6 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
 
     pv_length[ply] = ply;
 
-    if (depth == 0)
-        return quiescence_search(alpha, beta, depth, ply);
-
 
     if (!is_root_node)
     {
@@ -64,6 +61,9 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
         if (alpha >= beta)
             return alpha;
     }
+
+    if (depth <= 0)
+        return quiescence_search(alpha, beta, depth, ply);
 
     // probing TT
     uint64_t poskey  = board.hash();
