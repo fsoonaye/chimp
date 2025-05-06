@@ -23,7 +23,7 @@ Move Engine::iterative_deepening(int max_depth) {
 
     for (int depth = 1; depth <= max_depth; depth++)
     {
-        score = negamax_search<PV>(-VALUE_INF, VALUE_INF, depth, 0);
+        score    = negamax_search<PV>(-VALUE_INF, VALUE_INF, depth, 0);
         bestmove = pv_table[0][0];
         
         if (time_is_up())
@@ -39,8 +39,6 @@ Move Engine::iterative_deepening(int max_depth) {
 
 template<NodeType nodetype>
 int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
-    nodes++;
-
     if (time_is_up())
         return VALUE_NONE;
 
@@ -94,6 +92,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     int  bestscore = -VALUE_INF;
     Move bestmove  = Move::NO_MOVE;
     Move move      = Move::NO_MOVE;
+    int  movecount = 0;
     int  score;
 
     // generating legal moves
@@ -107,8 +106,35 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     MovePicker mp(*this, moves, ttmove, ply);
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
+        movecount++;
+
+        bool go_full_depth = true;
+        bool is_capture    = board.isCapture(move);
+        int  newdepth      = depth - 1;
+
+        nodes++;
         board.makeMove(move);
 
+        // clang-format off
+        if (depth >= 3 && movecount > 3 &&
+            !is_root_node && !is_in_check && !is_pv_node && 
+            move.typeOf() != Move::PROMOTION && !is_capture)
+        {  // clang-format on
+            int reduction = 1 + std::log(depth) * std::log(movecount) / 3;
+            newdepth      = std::max(1, depth - 1 - reduction);
+            go_full_depth = false;
+        }
+
+        // Search with reduced depth if LMR applies
+        if (!go_full_depth)
+        {
+            score = -negamax_search<NON_PV>(-alpha - 1, -alpha, newdepth, ply + 1);
+
+            if (score > alpha)
+                go_full_depth = true;
+        }
+        else
+        {
         // Principal Variation Search
         if (is_root_node)
             // For the first move → full window search.
@@ -177,8 +203,6 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
 
 
 int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
-    nodes++;
-
     if (time_is_up())
         return VALUE_NONE;
 
@@ -234,6 +258,7 @@ int Engine::quiescence_search(int alpha, int beta, int depth, int ply) {
         if (!board.inCheck() && !SEE(board, move, 1))
             continue;
 
+        nodes++;
         board.makeMove(move);
         int score = -quiescence_search(-beta, -alpha, depth, ply + 1);
         board.unmakeMove(move);
