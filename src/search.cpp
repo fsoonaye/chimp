@@ -45,6 +45,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     // Initializing variables
     bool is_root_node = (ply == 0);
     bool is_pv_node   = (nodetype != NON_PV);
+    bool is_in_check  = board.inCheck();
 
     pv_length[ply] = ply;
 
@@ -88,6 +89,16 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
             return ttscore;
     }
 
+    // Reverse Futility Pruning (RFP)
+    if (!is_in_check && !is_pv_node && ttmove != Move::NO_MOVE && !board.isCapture(ttmove))
+    {
+        int static_eval = tthit ? ttscore : evaluate(board);
+        int margin      = 150 * depth;
+
+        if (static_eval >= beta + margin)
+            return static_eval;
+    }
+
     // initializing variables
     int  bestscore = -VALUE_INF;
     Move bestmove  = Move::NO_MOVE;
@@ -100,7 +111,6 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     movegen::legalmoves(moves, board);
 
     // check for checkmate or stalemate
-    bool is_in_check = board.inCheck();
     if (moves.empty())
         return is_in_check ? mated_in(ply) : 0;
 
