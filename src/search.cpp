@@ -100,8 +100,9 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     movegen::legalmoves(moves, board);
 
     // check for checkmate or stalemate
+    bool is_in_check = board.inCheck();
     if (moves.empty())
-        return board.inCheck() ? mated_in(ply) : 0;
+        return is_in_check ? mated_in(ply) : 0;
 
     MovePicker mp(*this, moves, ttmove, ply);
     while ((move = mp.next_move()) != Move::NO_MOVE)
