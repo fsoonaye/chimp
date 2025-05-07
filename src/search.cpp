@@ -48,7 +48,8 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     bool is_pv_node   = (node != NON_PV);
     bool is_in_check  = board.inCheck();
 
-    pv_length[ply] = ply;
+    int static_eval = VALUE_NONE;
+    pv_length[ply]  = ply;
 
 
     if (!is_root_node)
@@ -103,10 +104,23 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
             return ttscore;
     }
 
-    int static_eval = tthit ? ttscore : evaluate(board);
+    if (is_root_node)
+        goto moveloop;
+
+    // Internal Iterative Reductions (IIR)
+    if (!tthit)
+        depth -= (depth >= 3) + is_pv_node;
+
+    if (depth <= 0)
+        return quiescence_search<PV>(alpha, beta, ply);
+
+    if (is_in_check || is_pv_node)
+        goto moveloop;
+
+    static_eval = tthit ? ttscore : evaluate(board);
 
     // Reverse Futility Pruning (RFP)
-    if (!is_in_check && !is_pv_node && ttmove != Move::NO_MOVE && !board.isCapture(ttmove))
+    if (ttmove != Move::NO_MOVE && !board.isCapture(ttmove))
     {
         int margin = 150 * depth;
 
@@ -115,7 +129,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     }
 
     // Null Move Pruning (NMP)
-    if (!is_in_check && !is_pv_node && depth >= 3 && static_eval >= beta)
+    if (depth >= 3 && static_eval >= beta)
     {
         board.makeNullMove();
         int nullmove_score = -negamax_search<NON_PV>(-beta, -beta + 1, depth - 3, ply + 1);
@@ -125,6 +139,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
             return nullmove_score >= VALUE_MATE_IN_PLY ? beta : nullmove_score;
     }
 
+moveloop:
     // initializing variables
     int  bestscore = -VALUE_INF;
     Move bestmove  = Move::NO_MOVE;
