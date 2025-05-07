@@ -15,7 +15,7 @@ using namespace chess;
  * Different node types receive different treatment during search,
  * affecting pruning decisions and move ordering strategies.
  */
-enum NodeType {
+enum Node {
     PV,
     NON_PV,
     ROOT
@@ -53,7 +53,7 @@ class Engine {
      * @param ply Current distance from root position
      * @return Position score from the perspective of the side to move
      */
-    template<NodeType nodetype>
+    template<Node node>
     int negamax_search(int alpha, int beta, int depth, int ply);
 
     /**
@@ -67,7 +67,8 @@ class Engine {
      * @param ply Current distance from root position
      * @return Stable position score after capturing sequences
      */
-    int quiescence_search(int alpha, int beta, int depth, int ply);
+    template<Node node>
+    int quiescence_search(int alpha, int beta, int ply);
 
 
     /**
