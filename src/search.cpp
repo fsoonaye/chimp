@@ -67,14 +67,13 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     }
 
     // probing TT
-    uint64_t poskey  = board.hash();
     Move     ttmove  = Move::NO_MOVE;
     bool     tthit   = false;
-    TTEntry* tte     = tt.probe(poskey, ttmove, tthit);
+    TTEntry* tte     = tt.probe(board.hash(), ttmove, tthit);
     int      ttscore = tthit ? tte->score : VALUE_NONE;
 
     // TT cutoff
-    if (!is_root_node && !is_pv_node && tthit && tte->depth >= depth)
+    if (!is_root_node && !is_pv_node && tthit && ttscore != VALUE_NONE && tte->depth >= depth)
     {
         if (tte->bound == BOUND_EXACT)
             return ttscore;
@@ -217,10 +216,10 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     }
 
     // Store in TT
-    Bound bound = bestscore >= beta         ? BOUND_LOWER
-                : bestmove != Move::NO_MOVE ? BOUND_EXACT
-                                            : BOUND_UPPER;
-    tt.store(poskey, depth, bestscore, bestmove, bound);
+    Bound bound = bestscore >= beta                         ? BOUND_LOWER
+                : (is_pv_node && bestmove != Move::NO_MOVE) ? BOUND_EXACT
+                                                            : BOUND_UPPER;
+    tt.store(board.hash(), depth, bestscore, bestmove, bound);
 
     return bestscore;
 }
@@ -233,32 +232,28 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
     if (ply >= MAX_PLY)
         return evaluate(board);
 
+    constexpr bool is_pv_node = node == PV;
+
     // draw detection
     if (board.isRepetition() || board.isHalfMoveDraw())
         return 0;
 
     // probing TT
-    uint64_t poskey  = board.hash();
     Move     ttmove  = Move::NO_MOVE;
     bool     tthit   = false;
-    TTEntry* tte     = tt.probe(poskey, ttmove, tthit);
+    TTEntry* tte     = tt.probe(board.hash(), ttmove, tthit);
     int      ttscore = tthit ? tte->score : VALUE_NONE;
 
     // TT cutoff
-    if (tthit && tte->depth >= depth)
-    {
-        if (tte->bound == BOUND_EXACT)
-            return ttscore;
-
-        else if (tte->bound == BOUND_LOWER)
-            alpha = std::max(alpha, ttscore);
-
-        else if (tte->bound == BOUND_UPPER)
-            beta = std::min(beta, ttscore);
-
-        if (alpha >= beta)
-            return ttscore;
-    }
+    // clang-format off
+    if (tthit &&
+        !is_pv_node &&
+        ttscore != VALUE_NONE &&
+        ((tte->bound == BOUND_EXACT) ||
+         (tte->bound == BOUND_LOWER && ttscore >= beta) ||
+         (tte->bound == BOUND_UPPER && ttscore <= alpha)))
+        return ttscore;
+    // clang-format on
 
     // prematurily evaluating the board to check if we're out of bounds or in need to update alpha
     int bestscore = evaluate(board);
@@ -308,10 +303,8 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
     }
 
     // Store in TT
-    Bound bound = bestscore >= beta         ? BOUND_LOWER
-                : bestmove != Move::NO_MOVE ? BOUND_EXACT
-                                            : BOUND_UPPER;
-    tt.store(poskey, depth, bestscore, bestmove, bound);
+    Bound bound = bestscore >= beta ? BOUND_LOWER : BOUND_UPPER;
+    tt.store(board.hash(), DEPTH_QS, bestscore, bestmove, bound);
 
 
     return bestscore;
