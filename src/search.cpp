@@ -12,6 +12,7 @@ Move Engine::get_bestmove(int depth) {
     stop_search = false;
     nodes       = 0;
     init_heuristic_tables();
+    init_reduction_table();
 
     return iterative_deepening(depth);
 }
@@ -125,47 +126,50 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
         movecount++;
-
-        bool go_full_depth = true;
-        bool is_capture    = board.isCapture(move);
-        int  newdepth      = depth - 1;
+        bool is_capture = board.isCapture(move);
+        int  newdepth   = depth - 1;
 
         nodes++;
         board.makeMove(move);
 
+        // Late Move Reduction (LMR)
         // clang-format off
-        if (depth >= 3 && movecount > 3 &&
-            !is_root_node && !board.inCheck() && !is_pv_node && 
-            move.typeOf() != Move::PROMOTION && !is_capture)
-        {  // clang-format on
-            int reduction = 1 + std::log(depth) * std::log(movecount) / 3;
-            newdepth      = std::max(1, depth - 1 - reduction);
-            go_full_depth = false;
-        }
+    bool do_lmr = depth >= 3
+               && movecount > 2
+               && !is_root_node
+               && !is_in_check
+               && !is_pv_node
+               && !is_capture
+               && move.typeOf() != Move::PROMOTION
+               && move != killer_moves[ply][0]
+               && move != killer_moves[ply][1];
+        // clang-format on
 
-        // Search with reduced depth if LMR applies
-        if (!go_full_depth)
+        if (do_lmr)
         {
+            int reduction = reduction_table[depth][movecount];
+            newdepth      = std::max(1, depth - 1 - reduction);
+
+            // Do reduced depth search with null window
             score = -negamax_search<NON_PV>(-alpha - 1, -alpha, newdepth, ply + 1);
 
+            // If score exceeds alpha, do full depth search
             if (score > alpha)
-                go_full_depth = true;
+                score = -negamax_search<NON_PV>(-alpha - 1, -alpha, depth - 1, ply + 1);
         }
         else
         {
-            // Principal Variation Search
+            // Principal Variation Search (PVS)
             if (movecount == 1)
-                // For the first move → full window search.
-                score = -negamax_search<node>(-beta, -alpha, depth - 1, ply + 1);
-
+                score = -negamax_search<node>(-beta, -alpha, newdepth, ply + 1);
             else
             {
-                // First, search with a null window [-α-1, -α].
-                score = -negamax_search<NON_PV>(-alpha - 1, -alpha, depth - 1, ply + 1);
+                // Null window search first
+                score = -negamax_search<NON_PV>(-alpha - 1, -alpha, newdepth, ply + 1);
 
-                // If the score ∈ [α, β], it might be better than α, so re-search with full window.
+                // If score falls within window and we're in a PV node, do full window search
                 if (score > alpha && score < beta && is_pv_node)
-                    score = -negamax_search<PV>(-beta, -alpha, depth - 1, ply + 1);
+                    score = -negamax_search<PV>(-beta, -alpha, newdepth, ply + 1);
             }
         }
 
@@ -246,12 +250,12 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
 
     // TT cutoff
     // clang-format off
-    if (tthit &&
-        !is_pv_node &&
-        ttscore != VALUE_NONE &&
-        ((tte->bound == BOUND_EXACT) ||
-         (tte->bound == BOUND_LOWER && ttscore >= beta) ||
-         (tte->bound == BOUND_UPPER && ttscore <= alpha)))
+    if (tthit
+    &&  !is_pv_node
+    &&  ttscore != VALUE_NONE
+    && (  (tte->bound == BOUND_EXACT)
+       || (tte->bound == BOUND_LOWER && ttscore >= beta)
+       || (tte->bound == BOUND_UPPER && ttscore <= alpha)))
         return ttscore;
     // clang-format on
 
