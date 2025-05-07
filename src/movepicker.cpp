@@ -118,8 +118,16 @@ void MovePicker::score_moves() {
             killer2 = move;
             score   = SCORE_KILLER2;
         }
-
-        // Quiet moves get default score of 0
+        // MODIFIED: Score quiet moves using history heuristic
+        else
+        {
+            // Values in history_table are now clamped [0, Engine::MAX_HISTORY_VALUE]
+            // Direct cast to int16_t is fine as MAX_HISTORY_VALUE (16000) fits.
+            int raw_history_score =
+              engine.history_table[static_cast<int>(engine.board.sideToMove())][move.from().index()]
+                                  [move.to().index()];
+            score = static_cast<int16_t>(raw_history_score);
+        }
 
         move.setScore(score);
     }

@@ -138,6 +138,7 @@ class Engine {
         std::memset(pv_length, 0, sizeof(pv_length));
         std::fill(&pv_table[0][0], &pv_table[0][0] + MAX_PLY * MAX_PLY, Move::NO_MOVE);
         std::fill(&killer_moves[0][0], &killer_moves[0][0] + MAX_PLY * 2, Move::NO_MOVE);
+        std::memset(history_table, 0, sizeof(history_table));
     }
 
     /**
@@ -197,11 +198,11 @@ class Engine {
                   1 + std::log(depth) * std::log(movecount) / 2.25;
     }
 
-    int reduction_table[MAX_PLY][MAX_MOVES];
 
+    int  history_table[2][64][64];
+    int  reduction_table[MAX_PLY][MAX_MOVES];
     Move pv_table[MAX_PLY][MAX_PLY];
     int  pv_length[MAX_PLY];
-
     Move killer_moves[MAX_PLY][2];
 
     uint64_t nodes = 0;
