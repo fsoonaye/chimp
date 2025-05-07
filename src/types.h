@@ -3,7 +3,8 @@
 
 using namespace chess;
 
-constexpr int MAX_PLY = 64;
+constexpr int MAX_PLY   = 64;
+constexpr int MAX_MOVES = 128;
 
 constexpr int VALUE_MATE = 32000;
 constexpr int VALUE_INF  = VALUE_MATE + 1;
