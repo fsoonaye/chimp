@@ -135,7 +135,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
 
         // clang-format off
         if (depth >= 3 && movecount > 3 &&
-            !is_root_node && !is_in_check && !is_pv_node && 
+            !is_root_node && !board.inCheck() && !is_pv_node && 
             move.typeOf() != Move::PROMOTION && !is_capture)
         {  // clang-format on
             int reduction = 1 + std::log(depth) * std::log(movecount) / 3;
@@ -213,7 +213,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
 
     // check for checkmate or stalemate
     if (movecount == 0)
-        return is_in_check ? mated_in(ply) : 0;
+        return board.inCheck() ? mated_in(ply) : 0;
 
     // Store in TT
     Bound bound = bestscore >= beta                         ? BOUND_LOWER
