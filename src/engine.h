@@ -189,6 +189,16 @@ class Engine {
         std::cout << std::endl;
     }
 
+
+    void init_reduction_table() {
+        for (int depth = 1; depth < MAX_PLY; ++depth)
+            for (int movecount = 1; movecount < MAX_MOVES; ++movecount)
+                reduction_table[depth][movecount] =
+                  1 + std::log(depth) * std::log(movecount) / 2.25;
+    }
+
+    int reduction_table[MAX_PLY][MAX_MOVES];
+
     Move pv_table[MAX_PLY][MAX_PLY];
     int  pv_length[MAX_PLY];
 
