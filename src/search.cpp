@@ -121,10 +121,6 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     Movelist moves;
     movegen::legalmoves(moves, board);
 
-    // check for checkmate or stalemate
-    if (moves.empty())
-        return is_in_check ? mated_in(ply) : 0;
-
     MovePicker mp(*this, moves, ttmove, ply);
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
@@ -214,6 +210,10 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
             break;
         }
     }
+
+    // check for checkmate or stalemate
+    if (movecount == 0)
+        return is_in_check ? mated_in(ply) : 0;
 
     // Store in TT
     Bound bound = bestscore >= beta                         ? BOUND_LOWER
