@@ -2,6 +2,7 @@
 #include "evaluate.h"
 #include "time.h"
 #include "see.h"
+#include <algorithm>
 
 using namespace chess;
 
@@ -232,12 +233,21 @@ moveloop:
 
         if (score >= beta)
         {
-            // Store killer moves
-            if (move != killer_moves[ply][0] && !is_capture)
+            if (!is_capture)
             {
-                // Shift the previous killer and store the new one
-                killer_moves[ply][1] = killer_moves[ply][0];
-                killer_moves[ply][0] = move;
+                // Store killer moves
+                if (move != killer_moves[ply][0])
+                {
+                    // Shift the previous killer and store the new one
+                    killer_moves[ply][1] = killer_moves[ply][0];
+                    killer_moves[ply][0] = move;
+                }
+
+                // Update History heuristics
+                int& history_entry = history_table[static_cast<int>(board.sideToMove())]
+                                                  [move.from().index()][move.to().index()];
+                int bonus     = depth * depth;
+                history_entry = std::clamp(history_entry + bonus, 0, MAX_HISTORY_VALUE);
             }
 
             break;
