@@ -134,15 +134,15 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
 
         // Late Move Reduction (LMR)
         // clang-format off
-    bool do_lmr = depth >= 3
-               && movecount > 2
-               && !is_root_node
-               && !is_in_check
-               && !is_pv_node
-               && !is_capture
-               && move.typeOf() != Move::PROMOTION
-               && move != killer_moves[ply][0]
-               && move != killer_moves[ply][1];
+        bool do_lmr = depth >= 3
+                && movecount > 2
+                && !is_root_node
+                && !is_in_check
+                && !is_pv_node
+                && !is_capture
+                && move.typeOf() != Move::PROMOTION
+                && move != killer_moves[ply][0]
+                && move != killer_moves[ply][1];
         // clang-format on
 
         if (do_lmr)
