@@ -50,15 +50,23 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
 
     pv_length[ply] = ply;
 
-    if (depth <= 0)
-        return quiescence_search<node>(alpha, beta, ply);
-
 
     if (!is_root_node)
     {
-        // Draw or repetition detection
-        if (board.isRepetition() || board.isHalfMoveDraw())
-            return 0;
+        // repetition detection
+        if (board.isRepetition(1 + is_pv_node))
+            return -1 + (nodes & 0x2);
+
+        // 50 move draw detection
+        if (board.isHalfMoveDraw())
+        {
+            auto [reason, result] = board.getHalfMoveDrawType();
+            if (result == GameResult::DRAW)
+                return 0;
+
+            if (result == GameResult::LOSE)
+                return mated_in(ply);
+        }
 
         // Mate distance pruning
         alpha = std::max(alpha, mated_in(ply));
@@ -66,6 +74,12 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
         if (alpha >= beta)
             return alpha;
     }
+
+    if (is_in_check)
+        depth++;
+
+    if (depth <= 0)
+        return quiescence_search<node>(alpha, beta, ply);
 
     // probing TT
     Move     ttmove  = Move::NO_MOVE;
