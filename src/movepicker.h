@@ -52,6 +52,7 @@ class MovePicker {
         CAPTURES,
         KILLER1,
         KILLER2,
+        COUNTER,
         QUIET
     };
 
@@ -87,6 +88,7 @@ class MovePicker {
     Move ttmove;
     Move killer1 = Move::NO_MOVE;
     Move killer2 = Move::NO_MOVE;
+    Move counter = Move::NO_MOVE;
 
     int   ply;
     Phase phase = Phase::TT;

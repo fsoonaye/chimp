@@ -61,6 +61,13 @@ Move MovePicker::next_move() {
 
         [[fallthrough]];
 
+    case Phase::COUNTER :
+        phase = Phase::QUIET;
+
+        if (counter != Move::NO_MOVE && counter != ttmove && counter != killer1
+            && counter != killer2)
+            return counter;
+
     case Phase::QUIET :
         while (index < movelist.size())
         {
@@ -118,20 +125,30 @@ void MovePicker::score_moves() {
             score   = SCORE_KILLER2;
         }
 
-        // Score remaining quiet moves
+        // Score quiet moves
         else
         {
-            int side     = engine.board.sideToMove();
-            int from_idx = move.from().index();
-            int to_idx   = move.to().index();
 
             // Score counter moves
-            if (move == engine.counter_moves[from_idx][to_idx])
-                score = SCORE_COUNTER;
+            if (ply > 0)
+            {
+                Move prevmove = engine.search_info[ply - 1].currentmove;
+                if (prevmove != Move::NO_MOVE
+                    && move == engine.counter_moves[prevmove.from().index()][prevmove.to().index()])
+                {
+                    counter = move;
+                    score   = SCORE_COUNTER;
+                }
+            }
 
             // Score remaining quiet moves
             else
-                score = engine.history_table[side][from_idx][to_idx];
+            {
+                int side     = engine.board.sideToMove();
+                int from_idx = move.from().index();
+                int to_idx   = move.to().index();
+                score        = engine.history_table[side][from_idx][to_idx];
+            }
         }
 
         move.setScore(score);

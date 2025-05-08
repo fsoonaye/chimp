@@ -9,21 +9,24 @@
 #include <cmath>
 
 void Engine::update_quiet_heuristics(Move move, int ply, int depth) {
-    // Update killer moves
+    // KILLER MOVE UPDATE
     if (move != killer_moves[ply][0])
     {
         killer_moves[ply][1] = killer_moves[ply][0];
         killer_moves[ply][0] = move;
     }
 
+    // COUNTER MOVE UPDATE
+    if (ply > 0)
+        counter_moves[search_info[ply - 1].currentmove.from().index()]
+                     [search_info[ply - 1].currentmove.to().index()] = move;
 
-    // Update history heuristics
-    if (depth > 1)
-    {
-        int  bonus = std::min(2000, depth * 155);
-        int& entry = history_table[board.sideToMove()][move.from().index()][move.to().index()];
-        entry += bonus - entry * bonus / 16384;
-    }
+    // HISTORY HEURISTICS UPDATE
+    int& entry = history_table[board.sideToMove()][move.from().index()][move.to().index()];
+    int  bonus = depth * depth;
+
+    int clamped_bonus = std::clamp(bonus, -MAX_HISTORY_VALUE, MAX_HISTORY_VALUE);
+    entry += clamped_bonus - entry * clamped_bonus / MAX_HISTORY_VALUE;
 }
 
 bool Engine::time_is_up() {
