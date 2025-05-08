@@ -112,20 +112,26 @@ void MovePicker::score_moves() {
             killer1 = move;
             score   = SCORE_KILLER1;
         }
-
         else if (move == engine.killer_moves[ply][1])
         {
             killer2 = move;
             score   = SCORE_KILLER2;
         }
 
+        // Score remaining quiet moves
         else
         {
-            // Values in history_table can be [-MAX_HISTORY_VALUE, +MAX_HISTORY_VALUE]
-            int raw_history_score =
-              engine.history_table[static_cast<int>(engine.board.sideToMove())][move.from().index()]
-                                  [move.to().index()];
-            score = static_cast<int16_t>(raw_history_score);
+            int side     = engine.board.sideToMove();
+            int from_idx = move.from().index();
+            int to_idx   = move.to().index();
+
+            // Score counter moves
+            if (move == engine.counter_moves[from_idx][to_idx])
+                score = SCORE_COUNTER;
+
+            // Score remaining quiet moves
+            else
+                score = engine.history_table[side][from_idx][to_idx];
         }
 
         move.setScore(score);
@@ -133,8 +139,8 @@ void MovePicker::score_moves() {
 }
 
 int16_t MovePicker::get_mvvlva_score(const Move& move) {
-    int victim   = static_cast<int>(engine.board.at<PieceType>(move.to()));
-    int attacker = static_cast<int>(engine.board.at<PieceType>(move.from()));
+    int victim   = engine.board.at<PieceType>(move.to());
+    int attacker = engine.board.at<PieceType>(move.from());
 
     return mvvlva_array[victim][attacker];
 }

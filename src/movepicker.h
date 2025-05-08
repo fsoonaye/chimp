@@ -10,7 +10,8 @@
 enum MoveScore : int16_t {
     SCORE_CAPTURE = 10000,
     SCORE_KILLER1 = 9000,
-    SCORE_KILLER2 = 8000
+    SCORE_KILLER2 = 8000,
+    SCORE_COUNTER = 7000
 };
 
 /**

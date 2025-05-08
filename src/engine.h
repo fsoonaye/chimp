@@ -134,6 +134,7 @@ class Engine {
     Move       pv_table[MAX_PLY][MAX_PLY];
     int        pv_length[MAX_PLY];
     Move       killer_moves[MAX_PLY][2];
+    Move       counter_moves[64][64];
     SearchInfo search_info[MAX_PLY + 4];
 
     uint64_t nodes = 0;
