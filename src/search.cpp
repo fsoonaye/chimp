@@ -2,6 +2,7 @@
 #include "evaluate.h"
 #include "time.h"
 #include "see.h"
+#include "engine.h"
 #include <algorithm>
 
 using namespace chess;
@@ -55,11 +56,11 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
 
     if (!is_root_node)
     {
-        // repetition detection
+        // REPETITION DETECTION
         if (board.isRepetition(1 + is_pv_node))
             return -1 + (nodes & 0x2);
 
-        // 50 move draw detection
+        // 50 MOVE DRAW DETECTION
         if (board.isHalfMoveDraw())
         {
             auto [reason, result] = board.getHalfMoveDrawType();
@@ -70,26 +71,27 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
                 return mated_in(ply);
         }
 
-        // Mate distance pruning
+        // MATE DISTANCE PRUNING
         alpha = std::max(alpha, mated_in(ply));
         beta  = std::min(beta, mate_in(ply + 1));
         if (alpha >= beta)
             return alpha;
     }
 
+    // CHECK EXTENSION
     if (is_in_check)
         depth++;
 
     if (depth <= 0)
         return quiescence_search<node>(alpha, beta, ply);
 
-    // probing TT
+    // TRANSPOSITION TABLE PROBE
     Move     ttmove  = Move::NO_MOVE;
     bool     tthit   = false;
     TTEntry* tte     = tt.probe(board.hash(), ttmove, tthit);
     int      ttscore = tthit ? tte->score : VALUE_NONE;
 
-    // TT cutoff
+    // TRANSPOSITION TABLE CUTOFF
     if (!is_root_node && !is_pv_node && tthit && ttscore != VALUE_NONE && tte->depth >= depth)
     {
         if (tte->bound == BOUND_EXACT)
@@ -108,19 +110,19 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     if (is_root_node)
         goto moveloop;
 
-    // Internal Iterative Reductions (IIR)
+    // INTERNAL ITERATIVE REDUCTIONS (IIR)
     if (!tthit)
         depth -= (depth >= 3) + is_pv_node;
 
     if (depth <= 0)
-        return quiescence_search<PV>(alpha, beta, ply);
+        return quiescence_search<node>(alpha, beta, ply);
 
     if (is_in_check || is_pv_node)
         goto moveloop;
 
     static_eval = tthit ? ttscore : evaluate(board);
 
-    // Reverse Futility Pruning (RFP)
+    // REVERSE FUTILITY PRUNING (RFP)
     if (ttmove != Move::NO_MOVE && !board.isCapture(ttmove))
     {
         int margin = 150 * depth;
@@ -129,7 +131,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
             return static_eval;
     }
 
-    // Null Move Pruning (NMP)
+    // NULL MOVE PRUNING (NMP)
     if (depth >= 3 && static_eval >= beta)
     {
         board.makeNullMove();
@@ -162,7 +164,7 @@ moveloop:
         nodes++;
         board.makeMove(move);
 
-        // Late Move Reduction (LMR)
+        // LATE MOVE REDUCTION (LMR)
         // clang-format off
         bool do_lmr = depth >= 3
                 && movecount > 2
@@ -189,7 +191,7 @@ moveloop:
         }
         else
         {
-            // Principal Variation Search (PVS)
+            // PRINCIPAL VARIATION SEARCH (PVS)
             if (movecount == 1)
                 score = -negamax_search<node>(-beta, -alpha, newdepth, ply + 1);
             else
@@ -233,6 +235,7 @@ moveloop:
 
         if (score >= beta)
         {
+            // BETA CUTOFF: KILLER & HISTORY UPDATES
             if (!is_capture)
             {
                 // Store killer moves
@@ -254,11 +257,11 @@ moveloop:
         }
     }
 
-    // check for checkmate or stalemate
+    // CHECKMATE/STALEMATE DETECTION
     if (movecount == 0)
         return board.inCheck() ? mated_in(ply) : 0;
 
-    // Store in TT
+    // TRANSPOSITION TABLE STORE
     Bound bound = bestscore >= beta                         ? BOUND_LOWER
                 : (is_pv_node && bestmove != Move::NO_MOVE) ? BOUND_EXACT
                                                             : BOUND_UPPER;
@@ -277,28 +280,28 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
 
     constexpr bool is_pv_node = node == PV;
 
-    // draw detection
-    if (board.isRepetition() || board.isHalfMoveDraw())
-        return 0;
+    // DRAW DETECTION
+    if (board.isRepetition(1 + is_pv_node))
+        return -1 + (nodes & 0x2);
 
-    // probing TT
+    // TRANSPOSITION TABLE PROBE
     Move     ttmove  = Move::NO_MOVE;
     bool     tthit   = false;
     TTEntry* tte     = tt.probe(board.hash(), ttmove, tthit);
     int      ttscore = tthit ? tte->score : VALUE_NONE;
 
-    // TT cutoff
+    // TRANSPOSITION TABLE CUTOFF
     // clang-format off
     if (tthit
     &&  !is_pv_node
     &&  ttscore != VALUE_NONE
-    && (  (tte->bound == BOUND_EXACT)
+    &&   ((tte->bound == BOUND_EXACT)
        || (tte->bound == BOUND_LOWER && ttscore >= beta)
        || (tte->bound == BOUND_UPPER && ttscore <= alpha)))
         return ttscore;
     // clang-format on
 
-    // prematurily evaluating the board to check if we're out of bounds or in need to update alpha
+    // STAND PAT EVALUATION
     int bestscore = evaluate(board);
     if (bestscore >= beta)
         return bestscore;
@@ -316,7 +319,7 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
     MovePicker mp(*this, moves, ttmove, ply);
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
-        // SEE pruning
+        // STATIC EXCHANGE EVALUATION (SEE) PRUNING
         if (!board.inCheck() && !SEE(board, move, 1))
             continue;
 
@@ -345,7 +348,7 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
             break;
     }
 
-    // Store in TT
+    // TRANSPOSITION TABLE STORE
     Bound bound = bestscore >= beta ? BOUND_LOWER : BOUND_UPPER;
     tt.store(board.hash(), DEPTH_QS, bestscore, bestmove, bound);
 
