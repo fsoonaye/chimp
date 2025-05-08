@@ -2,6 +2,7 @@
 #include "evaluate.h"
 #include "time.h"
 #include "see.h"
+#include "engine.h"
 #include <algorithm>
 
 using namespace chess;
@@ -280,8 +281,8 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
     constexpr bool is_pv_node = node == PV;
 
     // DRAW DETECTION
-    if (board.isRepetition() || board.isHalfMoveDraw())
-        return 0;
+    if (board.isRepetition(1 + is_pv_node))
+        return -1 + (nodes & 0x2);
 
     // TRANSPOSITION TABLE PROBE
     Move     ttmove  = Move::NO_MOVE;
@@ -294,13 +295,13 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
     if (tthit
     &&  !is_pv_node
     &&  ttscore != VALUE_NONE
-    && (  (tte->bound == BOUND_EXACT)
+    &&   ((tte->bound == BOUND_EXACT)
        || (tte->bound == BOUND_LOWER && ttscore >= beta)
        || (tte->bound == BOUND_UPPER && ttscore <= alpha)))
         return ttscore;
     // clang-format on
 
-    // STAND PAT EVALUATION & ALPHA UPDATE
+    // STAND PAT EVALUATION
     int bestscore = evaluate(board);
     if (bestscore >= beta)
         return bestscore;
