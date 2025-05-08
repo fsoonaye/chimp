@@ -229,6 +229,11 @@ moveloop:
 
         if (score >= beta)
         {
+            // COUNTER MOVE UPDATE
+            if (!is_root_node)
+                counter_moves[search_info[ply - 1].currentmove.from().index()]
+                             [search_info[ply - 1].currentmove.to().index()] = move;
+
             // KILLER & HISTORY UPDATES
             if (!is_capture)
                 update_quiet_heuristics(move, ply, depth);
