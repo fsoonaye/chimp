@@ -16,22 +16,14 @@ void Engine::update_quiet_heuristics(Move move, int ply, int depth) {
         killer_moves[ply][0] = move;
     }
 
-    // Update counter moves
-    if (ply > 0)
+
+    // Update history heuristics
+    if (depth > 1)
     {
-        Move prev_move = search_info[ply - 1].currentmove;
-        if (prev_move != Move::NO_MOVE)
-            counter_moves[prev_move.from().index()][prev_move.to().index()] = move;
+        int  bonus = std::min(2000, depth * 155);
+        int& entry = history_table[board.sideToMove()][move.from().index()][move.to().index()];
+        entry += bonus - entry * bonus / 16384;
     }
-
-    // Calculate bonus based on depth
-    int bonus = std::min(2000, depth * 155);
-
-    // Update history heuristics using the gravity formula
-    int& history_entry =
-      history_table[static_cast<int>(board.sideToMove())][move.from().index()][move.to().index()];
-    int hh_bonus = bonus - history_entry * std::abs(bonus) / 16384;
-    history_entry += hh_bonus;
 }
 
 bool Engine::time_is_up() {
