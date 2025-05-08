@@ -16,7 +16,7 @@ constexpr int VALUE_MATED_IN_PLY = -VALUE_MATE_IN_PLY;
 constexpr int DEPTH_QS = 0;
 
 // Maximum value for an entry in the history table
-constexpr int MAX_HISTORY_VALUE = 4096;
+constexpr int MAX_HISTORY_VALUE = 16384;
 
 /**
  * @brief Checks if a score indicates a checkmate
