@@ -69,3 +69,12 @@ struct Limits {
     int      depth      = MAX_PLY;
     bool     isInfinite = false;  // not handled yet
 };
+
+/**
+ * @struct SearchInfo
+ * @brief Stores search information for each ply during negamax
+ */
+struct SearchInfo {
+    Move currentmove = Move::NO_MOVE;  ///< Current move being searched
+    int  eval        = VALUE_NONE;     ///< Static evaluation at this position
+};

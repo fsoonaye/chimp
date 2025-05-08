@@ -13,8 +13,7 @@ Move Engine::get_bestmove(int depth) {
     starttime   = std::chrono::high_resolution_clock::now();
     stop_search = false;
     nodes       = 0;
-    init_heuristic_tables();
-    init_reduction_table();
+    init_tables();
 
     return iterative_deepening(depth);
 }
@@ -50,9 +49,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     bool is_pv_node   = (node != NON_PV);
     bool is_in_check  = board.inCheck();
 
-    int static_eval = VALUE_NONE;
-    pv_length[ply]  = ply;
-
+    pv_length[ply] = ply;
 
     if (!is_root_node)
     {
@@ -120,19 +117,19 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     if (is_in_check || is_pv_node)
         goto moveloop;
 
-    static_eval = tthit ? ttscore : evaluate(board);
+    search_info[ply].eval = tthit ? ttscore : evaluate(board);
 
     // REVERSE FUTILITY PRUNING (RFP)
     if (ttmove != Move::NO_MOVE && !board.isCapture(ttmove))
     {
         int margin = 150 * depth;
 
-        if (static_eval >= beta + margin)
-            return static_eval;
+        if (search_info[ply].eval >= beta + margin)
+            return search_info[ply].eval;
     }
 
     // NULL MOVE PRUNING (NMP)
-    if (depth >= 3 && static_eval >= beta)
+    if (depth >= 3 && search_info[ply].eval >= beta)
     {
         board.makeNullMove();
         int nullmove_score = -negamax_search<NON_PV>(-beta, -beta + 1, depth - 3, ply + 1);
@@ -163,18 +160,19 @@ moveloop:
 
         nodes++;
         board.makeMove(move);
+        search_info[ply].currentmove = move;
 
         // LATE MOVE REDUCTION (LMR)
         // clang-format off
         bool do_lmr = depth >= 3
-                && movecount > 2
-                && !is_root_node
-                && !is_in_check
-                && !is_pv_node
-                && !is_capture
-                && move.typeOf() != Move::PROMOTION
-                && move != killer_moves[ply][0]
-                && move != killer_moves[ply][1];
+                   && movecount > 2
+                   && !is_root_node
+                   && !is_in_check
+                   && !is_pv_node
+                   && !is_capture
+                   && move.typeOf() != Move::PROMOTION
+                   && move != killer_moves[ply][0]
+                   && move != killer_moves[ply][1];
         // clang-format on
 
         if (do_lmr)
@@ -221,37 +219,19 @@ moveloop:
                 alpha    = score;
                 bestmove = move;
 
-                // Update principal variation:
+                // PRINCIPAL VARIATION UPDATE
                 pv_table[ply][ply] = move;
-
-                // copying pv from the ply just after
                 for (int nextply = ply + 1; nextply < pv_length[ply + 1]; nextply++)
                     pv_table[ply][nextply] = pv_table[ply + 1][nextply];
-
-                // update current pv length from the ply just after
                 pv_length[ply] = pv_length[ply + 1];
             }
         }
 
         if (score >= beta)
         {
-            // BETA CUTOFF: KILLER & HISTORY UPDATES
+            // KILLER & HISTORY UPDATES
             if (!is_capture)
-            {
-                // Store killer moves
-                if (move != killer_moves[ply][0])
-                {
-                    // Shift the previous killer and store the new one
-                    killer_moves[ply][1] = killer_moves[ply][0];
-                    killer_moves[ply][0] = move;
-                }
-
-                // Update History heuristics
-                int& history_entry = history_table[static_cast<int>(board.sideToMove())]
-                                                  [move.from().index()][move.to().index()];
-                int bonus     = depth * depth;
-                history_entry = std::clamp(history_entry + bonus, 0, MAX_HISTORY_VALUE);
-            }
+                update_quiet_heuristics(move, ply, depth);
 
             break;
         }
@@ -303,8 +283,10 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
 
     // STAND PAT EVALUATION
     int bestscore = evaluate(board);
+
     if (bestscore >= beta)
         return bestscore;
+
     if (bestscore > alpha)
         alpha = bestscore;
 
@@ -351,7 +333,6 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
     // TRANSPOSITION TABLE STORE
     Bound bound = bestscore >= beta ? BOUND_LOWER : BOUND_UPPER;
     tt.store(board.hash(), DEPTH_QS, bestscore, bestmove, bound);
-
 
     return bestscore;
 }

@@ -27,6 +27,7 @@ enum Node {
  */
 class Engine {
    public:
+    // Search functions
     /**
      * @brief Calculates the best move for the current position
      * @param depth Maximum search depth (defaults to MAX_PLY)
@@ -70,14 +71,15 @@ class Engine {
     template<Node node>
     int quiescence_search(int alpha, int beta, int ply);
 
-
     /**
-     * @brief Resets the engine to initial state for a new game
-     * 
-     * called when receiving ucinewgame UCI instruction
+     * @brief Updates killer moves and history heuristics for a quiet move causing a beta cutoff.
+     * @param move The quiet move that caused the beta cutoff.
+     * @param ply The current ply in the search.
+     * @param depth The search depth used for the history bonus calculation.
      */
-    void reset();
+    void update_quiet_heuristics(Move move, int ply, int depth);
 
+    // Time management functions
     /**
      * @brief Checks if the search should be terminated based on limits
      * @return True if search should stop, false otherwise
@@ -90,13 +92,7 @@ class Engine {
      */
     int64_t get_elapsedtime() const;
 
-    /**
-     * @brief Initializes tables used for move ordering and search heuristics
-     * 
-     * Clears the principal variation tables and killer moves table.
-     */
-    void init_heuristic_tables();
-
+    // Print functions
     /**
      * @brief Generates a string representation of the principal variation
      * @return String containing the sequence of best moves
@@ -112,17 +108,33 @@ class Engine {
      */
     void print_search_info(int depth, int score, uint64_t nodes, int64_t time_ms);
 
+    // Initialization functions
     /**
-     * @brief Initializes the late move reduction table.
+     * @brief Resets the engine to initial state for a new game
+     * 
+     * called when receiving ucinewgame UCI instruction
      */
-    void init_reduction_table();
+    void reset();
 
+    /**
+     * @brief Initializes all search-related tables and data structures
+     * 
+     * This includes:
+     * - Principal variation tables
+     * - Killer moves table
+     * - History heuristics table
+     * - Late move reduction table
+     * - Search information table
+     */
+    void init_tables();
 
-    int  history_table[2][64][64];
-    int  reduction_table[MAX_PLY][MAX_MOVES];
-    Move pv_table[MAX_PLY][MAX_PLY];
-    int  pv_length[MAX_PLY];
-    Move killer_moves[MAX_PLY][2];
+    // Member variables
+    int        history_table[2][64][64];
+    int        reduction_table[MAX_PLY][MAX_MOVES];
+    Move       pv_table[MAX_PLY][MAX_PLY];
+    int        pv_length[MAX_PLY];
+    Move       killer_moves[MAX_PLY][2];
+    SearchInfo search_info[MAX_PLY + 4];
 
     uint64_t nodes = 0;
 

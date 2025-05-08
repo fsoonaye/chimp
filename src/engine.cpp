@@ -1,28 +1,28 @@
 #include "engine.h"
-#include "types.h"    // For MAX_PLY, Move::NO_MOVE, constants::STARTPOS, VALUE_MATE, is_mate
-#include <cstring>    // For std::memset
-#include <algorithm>  // For std::fill
-#include <chrono>     // For std::chrono functions
-#include <sstream>    // For std::stringstream
-#include <iostream>   // For std::cout, std::endl
-#include <string>     // For std::string
-#include <cmath>      // For std::abs
+#include "types.h"
+#include <cstring>
+#include <algorithm>
+#include <chrono>
+#include <sstream>
+#include <iostream>
+#include <string>
+#include <cmath>
 
-// Bring chess namespace into scope for this file if not already by engine.h
-// For safety, it's good practice to have it in the .cpp if relying on it.
-// However, if engine.h already has `using namespace chess;` at global scope,
-// this might be redundant but harmless.
-// If engine.h only has it inside its own namespace or class, then it's needed here.
-// Assuming it's effectively available from engine.h or types.h for now.
+void Engine::update_quiet_heuristics(chess::Move move, int ply, int depth) {
+    // Update killer moves
+    if (move != killer_moves[ply][0])
+    {
+        killer_moves[ply][1] = killer_moves[ply][0];
+        killer_moves[ply][0] = move;
+    }
 
-// Definitions for Engine class member functions will go here.
+    // Update History heuristics using the gravity formula
+    int& history_entry =
+      history_table[static_cast<int>(board.sideToMove())][move.from().index()][move.to().index()];
 
-void Engine::reset() {
-    board       = Board::fromFen(constants::STARTPOS);
-    nodes       = 0;
-    stop_search = false;
-    tt.clear();
-    init_heuristic_tables();
+    int bonus = std::clamp(depth * depth, 0, MAX_HISTORY_VALUE);
+
+    history_entry += bonus - (history_entry * std::abs(bonus)) / MAX_HISTORY_VALUE;
 }
 
 bool Engine::time_is_up() {
@@ -60,13 +60,6 @@ bool Engine::time_is_up() {
 int64_t Engine::get_elapsedtime() const {
     auto currtime = std::chrono::high_resolution_clock::now();
     return std::chrono::duration_cast<std::chrono::milliseconds>(currtime - starttime).count();
-}
-
-void Engine::init_heuristic_tables() {
-    std::memset(pv_length, 0, sizeof(pv_length));
-    std::fill(&pv_table[0][0], &pv_table[0][0] + MAX_PLY * MAX_PLY, Move::NO_MOVE);
-    std::fill(&killer_moves[0][0], &killer_moves[0][0] + MAX_PLY * 2, Move::NO_MOVE);
-    std::memset(history_table, 0, sizeof(history_table));
 }
 
 std::string Engine::get_pv_string() {
@@ -107,11 +100,31 @@ void Engine::print_search_info(int depth, int score, uint64_t nodes, int64_t tim
     std::cout << std::endl;
 }
 
-void Engine::init_reduction_table() {
+void Engine::reset() {
+    board       = Board::fromFen(constants::STARTPOS);
+    nodes       = 0;
+    stop_search = false;
+    tt.clear();
+    init_tables();
+}
+
+void Engine::init_tables() {
+    // Initialize principal variation tables
+    std::memset(pv_length, 0, sizeof(pv_length));
+    std::fill(&pv_table[0][0], &pv_table[0][0] + MAX_PLY * MAX_PLY, Move::NO_MOVE);
+
+    // Initialize killer moves table
+    std::fill(&killer_moves[0][0], &killer_moves[0][0] + MAX_PLY * 2, Move::NO_MOVE);
+
+    // Initialize history heuristics table
+    std::memset(history_table, 0, sizeof(history_table));
+
+    // Initialize search information table
+    std::fill(search_info, search_info + MAX_PLY + 4, SearchInfo());
+
+    // Initialize late move reduction table
     for (int depth = 1; depth < MAX_PLY; ++depth)
         for (int movecount = 1; movecount < MAX_MOVES; ++movecount)
             reduction_table[depth][movecount] =
-              static_cast<int>(1
-                               + std::log(static_cast<double>(depth))
-                                   * std::log(static_cast<double>(movecount)) / 2.25);
+              1 + static_cast<int>(std::log(depth) * std::log(movecount) / 2.25);
 }
