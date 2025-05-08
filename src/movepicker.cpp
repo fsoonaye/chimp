@@ -129,26 +129,26 @@ void MovePicker::score_moves() {
         else
         {
 
-            // Score counter moves
-            if (ply > 0)
-            {
-                Move prevmove = engine.search_info[ply - 1].currentmove;
-                if (prevmove != Move::NO_MOVE
-                    && move == engine.counter_moves[prevmove.from().index()][prevmove.to().index()])
-                {
-                    counter = move;
-                    score   = SCORE_COUNTER;
-                }
-            }
+            // // Score counter moves
+            // if (ply > 0)
+            // {
+            //     Move prevmove = engine.search_info[ply - 1].currentmove;
+            //     if (prevmove != Move::NO_MOVE
+            //         && move == engine.counter_moves[prevmove.from().index()][prevmove.to().index()])
+            //     {
+            //         counter = move;
+            //         score   = SCORE_COUNTER;
+            //     }
+            // }
 
-            // Score remaining quiet moves
-            else
-            {
-                int side     = engine.board.sideToMove();
-                int from_idx = move.from().index();
-                int to_idx   = move.to().index();
-                score        = engine.history_table[side][from_idx][to_idx];
-            }
+            // // Score remaining quiet moves
+            // else
+            // {
+            int side     = engine.board.sideToMove();
+            int from_idx = move.from().index();
+            int to_idx   = move.to().index();
+            score        = engine.history_table[side][from_idx][to_idx];
+            //     }
         }
 
         move.setScore(score);
