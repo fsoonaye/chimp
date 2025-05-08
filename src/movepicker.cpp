@@ -118,11 +118,10 @@ void MovePicker::score_moves() {
             killer2 = move;
             score   = SCORE_KILLER2;
         }
-        // MODIFIED: Score quiet moves using history heuristic
+
         else
         {
-            // Values in history_table are now clamped [0, Engine::MAX_HISTORY_VALUE]
-            // Direct cast to int16_t is fine as MAX_HISTORY_VALUE (16000) fits.
+            // Values in history_table can be [-MAX_HISTORY_VALUE, +MAX_HISTORY_VALUE]
             int raw_history_score =
               engine.history_table[static_cast<int>(engine.board.sideToMove())][move.from().index()]
                                   [move.to().index()];
