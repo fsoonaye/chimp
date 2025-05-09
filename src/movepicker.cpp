@@ -61,6 +61,13 @@ Move MovePicker::next_move() {
 
         [[fallthrough]];
 
+    case Phase::COUNTER :
+        phase = Phase::QUIET;
+
+        if (counter != Move::NO_MOVE && counter != ttmove && counter != killer1
+            && counter != killer2)
+            return counter;
+
     case Phase::QUIET :
         while (index < movelist.size())
         {
@@ -112,21 +119,36 @@ void MovePicker::score_moves() {
             killer1 = move;
             score   = SCORE_KILLER1;
         }
-
         else if (move == engine.killer_moves[ply][1])
         {
             killer2 = move;
             score   = SCORE_KILLER2;
         }
-        // MODIFIED: Score quiet moves using history heuristic
+
+        // Score quiet moves
         else
         {
-            // Values in history_table are now clamped [0, Engine::MAX_HISTORY_VALUE]
-            // Direct cast to int16_t is fine as MAX_HISTORY_VALUE (16000) fits.
-            int raw_history_score =
-              engine.history_table[static_cast<int>(engine.board.sideToMove())][move.from().index()]
-                                  [move.to().index()];
-            score = static_cast<int16_t>(raw_history_score);
+
+            // // Score counter moves
+            // if (ply > 0)
+            // {
+            //     Move prevmove = engine.search_info[ply - 1].currmove;
+            //     if (prevmove != Move::NO_MOVE
+            //         && move == engine.counter_moves[prevmove.from().index()][prevmove.to().index()])
+            //     {
+            //         counter = move;
+            //         score   = SCORE_COUNTER;
+            //     }
+            // }
+
+            // // Score remaining quiet moves
+            // else
+            // {
+            int side     = engine.board.sideToMove();
+            int from_idx = move.from().index();
+            int to_idx   = move.to().index();
+            score        = engine.history_table[side][from_idx][to_idx];
+            //     }
         }
 
         move.setScore(score);
@@ -134,8 +156,8 @@ void MovePicker::score_moves() {
 }
 
 int16_t MovePicker::get_mvvlva_score(const Move& move) {
-    int victim   = static_cast<int>(engine.board.at<PieceType>(move.to()));
-    int attacker = static_cast<int>(engine.board.at<PieceType>(move.from()));
+    int victim   = engine.board.at<PieceType>(move.to());
+    int attacker = engine.board.at<PieceType>(move.from());
 
     return mvvlva_array[victim][attacker];
 }

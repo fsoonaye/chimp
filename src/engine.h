@@ -15,10 +15,10 @@ using namespace chess;
  * Different node types receive different treatment during search,
  * affecting pruning decisions and move ordering strategies.
  */
-enum Node {
-    PV,
-    NON_PV,
-    ROOT
+enum NodeType {
+    PV,   // Principal Variation node - full window search
+    CUT,  // Cut node - null window search
+    ROOT  // Root node - full window search
 };
 
 /**
@@ -27,6 +27,7 @@ enum Node {
  */
 class Engine {
    public:
+    // Search functions
     /**
      * @brief Calculates the best move for the current position
      * @param depth Maximum search depth (defaults to MAX_PLY)
@@ -36,24 +37,24 @@ class Engine {
 
     /**
      * @brief Performs iterative deepening search to find the best move
-     * @param MAX_PLY Maximum search depth to consider
+     * @param max_depth Maximum search depth to consider
      * @return Best move found from the latest fully searched depth
      */
-    Move iterative_deepening(int MAX_PLY);
+    Move iterative_deepening(int max_depth);
 
     /**
      * @brief Principal alpha-beta negamax search implementation
      *
      * called recursively until depth reaches 0
      *
-     * @tparam nodetype Type of node (PV, NON_PV, ROOT) affecting search behavior
+     * @tparam node Type of node (PV, CUT, ROOT) affecting search behavior
      * @param alpha Lower bound of the search window
      * @param beta Upper bound of the search window
      * @param depth Remaining search depth
      * @param ply Current distance from root position
      * @return Position score from the perspective of the side to move
      */
-    template<Node node>
+    template<NodeType node>
     int negamax_search(int alpha, int beta, int depth, int ply);
 
     /**
@@ -61,23 +62,25 @@ class Engine {
      *
      * Called recursively, once negamax_search() reaches a leaf node (depth 0)
      *
+     * @tparam node Type of node (PV, CUT, ROOT) affecting search behavior
      * @param alpha Lower bound of the search window
      * @param beta Upper bound of the search window
      * @param depth Remaining search depth (usually negative in quiescence)
      * @param ply Current distance from root position
      * @return Stable position score after capturing sequences
      */
-    template<Node node>
+    template<NodeType node>
     int quiescence_search(int alpha, int beta, int ply);
 
-
     /**
-     * @brief Resets the engine to initial state for a new game
-     * 
-     * called when receiving ucinewgame UCI instruction
+     * @brief Updates killer moves and history heuristics for a quiet move causing a beta cutoff.
+     * @param move The quiet move that caused the beta cutoff.
+     * @param ply The current ply in the search.
+     * @param depth The search depth used for the history bonus calculation.
      */
-    void reset();
+    void update_quiet_heuristics(Move move, int ply, int depth);
 
+    // Time management functions
     /**
      * @brief Checks if the search should be terminated based on limits
      * @return True if search should stop, false otherwise
@@ -90,13 +93,7 @@ class Engine {
      */
     int64_t get_elapsedtime() const;
 
-    /**
-     * @brief Initializes tables used for move ordering and search heuristics
-     * 
-     * Clears the principal variation tables and killer moves table.
-     */
-    void init_heuristic_tables();
-
+    // Print functions
     /**
      * @brief Generates a string representation of the principal variation
      * @return String containing the sequence of best moves
@@ -112,29 +109,48 @@ class Engine {
      */
     void print_search_info(int depth, int score, uint64_t nodes, int64_t time_ms);
 
+    // Initialization functions
     /**
-     * @brief Initializes the late move reduction table.
+     * @brief Resets the engine to initial state for a new game
+     * 
+     * called when receiving ucinewgame UCI instruction
      */
-    void init_reduction_table();
+    void reset();
 
+    /**
+     * @brief Initializes all search-related tables and data structures
+     * 
+     * This includes:
+     * - Principal variation tables
+     * - Killer moves table
+     * - History heuristics table
+     * - Late move reduction table
+     * - Search information table
+     */
+    void init_tables();
 
-    int  history_table[2][64][64];
-    int  reduction_table[MAX_PLY][MAX_MOVES];
-    Move pv_table[MAX_PLY][MAX_PLY];
-    int  pv_length[MAX_PLY];
-    Move killer_moves[MAX_PLY][2];
+    // Search tables
+    int        history_table[NUM_COLORS][BOARD_SIZE][BOARD_SIZE];
+    int        reduction_table[MAX_PLY][MAX_MOVES];
+    int        pv_length[MAX_PLY];
+    Move       pv_table[MAX_PLY][MAX_PLY];
+    Move       killer_moves[MAX_PLY][NUM_KILLERS];
+    Move       counter_moves[BOARD_SIZE][BOARD_SIZE];
+    SearchInfo search_info[MAX_PLY + 4];
 
+    // Search statistics and state
+    // Total nodes searched
     uint64_t nodes = 0;
-
+    // Current position
     Board board;
-
+    // Search limits
     Limits limits;
-
+    // Search termination flag
     bool stop_search = false;
-
+    // Search start time
     std::chrono::high_resolution_clock::time_point starttime;
-
+    // Transposition table
     TranspositionTable tt{};
-
+    // Debug output flag
     bool debug = true;
 };

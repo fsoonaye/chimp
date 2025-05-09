@@ -8,9 +8,10 @@
  * @brief Score categories used for move ordering
  */
 enum MoveScore : int16_t {
-    SCORE_CAPTURE = 10000,
-    SCORE_KILLER1 = 9000,
-    SCORE_KILLER2 = 8000
+    SCORE_CAPTURE = 20000,
+    SCORE_KILLER1 = 19000,
+    SCORE_KILLER2 = 18000,
+    SCORE_COUNTER = 17000
 };
 
 /**
@@ -51,6 +52,7 @@ class MovePicker {
         CAPTURES,
         KILLER1,
         KILLER2,
+        COUNTER,
         QUIET
     };
 
@@ -86,6 +88,7 @@ class MovePicker {
     Move ttmove;
     Move killer1 = Move::NO_MOVE;
     Move killer2 = Move::NO_MOVE;
+    Move counter = Move::NO_MOVE;
 
     int   ply;
     Phase phase = Phase::TT;

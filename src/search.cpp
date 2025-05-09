@@ -8,51 +8,50 @@
 using namespace chess;
 
 
-Move Engine::get_bestmove(int depth) {
-    // Initializing variables
+Move Engine::get_bestmove(int depth) { return iterative_deepening(depth); }
+
+Move Engine::iterative_deepening(int max_depth) {
+    // SEARCH INITIALIZATION
     starttime   = std::chrono::high_resolution_clock::now();
     stop_search = false;
     nodes       = 0;
-    init_heuristic_tables();
-    init_reduction_table();
-
-    return iterative_deepening(depth);
-}
-
-
-Move Engine::iterative_deepening(int max_depth) {
-    Move bestmove = Move::NO_MOVE;
     int  score;
+    Move bestmove = Move::NO_MOVE;
+    init_tables();
 
+    // ITERATIVE DEEPENING LOOP
     for (int depth = 1; depth <= max_depth; depth++)
     {
-        score    = negamax_search<PV>(-VALUE_INF, VALUE_INF, depth, 0);
+        score    = negamax_search<ROOT>(-VALUE_INF, VALUE_INF, depth, 0);
         bestmove = pv_table[0][0];
 
+        // TIME CHECK
         if (time_is_up())
             // current depth has been incompletely searched
             // we print pv for the latest fully searched depth
             break;
 
+        // SEARCH INFO OUTPUT
         print_search_info(depth, score, nodes, get_elapsedtime());
     }
 
     return bestmove;
 }
 
-template<Node node>
+template<NodeType node>
 int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
+    // TIME CHECK
     if (time_is_up())
         return VALUE_NONE;
 
-    // Initializing variables
-    bool is_root_node = (ply == 0);
-    bool is_pv_node   = (node != NON_PV);
-    bool is_in_check  = board.inCheck();
+    // NODE CLASSIFICATION
+    constexpr bool is_root_node = (node == ROOT);
+    constexpr bool is_cut_node  = (node == CUT);
+    constexpr bool is_pv_node   = !is_cut_node;
+    const bool     is_in_check  = board.inCheck();
 
-    int static_eval = VALUE_NONE;
-    pv_length[ply]  = ply;
-
+    // PRINCIPAL VARIATION INITIALIZATION
+    pv_length[ply] = ply;
 
     if (!is_root_node)
     {
@@ -63,7 +62,8 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
         // 50 MOVE DRAW DETECTION
         if (board.isHalfMoveDraw())
         {
-            auto [reason, result] = board.getHalfMoveDrawType();
+            const auto [reason, result] = board.getHalfMoveDrawType();
+
             if (result == GameResult::DRAW)
                 return 0;
 
@@ -74,6 +74,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
         // MATE DISTANCE PRUNING
         alpha = std::max(alpha, mated_in(ply));
         beta  = std::min(beta, mate_in(ply + 1));
+
         if (alpha >= beta)
             return alpha;
     }
@@ -82,6 +83,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     if (is_in_check)
         depth++;
 
+    // QUISCENCE SEARCH
     if (depth <= 0)
         return quiescence_search<node>(alpha, beta, ply);
 
@@ -91,8 +93,12 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     TTEntry* tte     = tt.probe(board.hash(), ttmove, tthit);
     int      ttscore = tthit ? tte->score : VALUE_NONE;
 
+    // avoid cutting off the root node
+    if (is_root_node)
+        goto moveloop;
+
     // TRANSPOSITION TABLE CUTOFF
-    if (!is_root_node && !is_pv_node && tthit && ttscore != VALUE_NONE && tte->depth >= depth)
+    if (!is_pv_node && tthit && ttscore != VALUE_NONE && tte->depth >= depth)
     {
         if (tte->bound == BOUND_EXACT)
             return ttscore;
@@ -107,35 +113,35 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
             return ttscore;
     }
 
-    if (is_root_node)
-        goto moveloop;
-
     // INTERNAL ITERATIVE REDUCTIONS (IIR)
     if (!tthit)
         depth -= (depth >= 3) + is_pv_node;
 
+    // QUISCENCE SEARCH
     if (depth <= 0)
         return quiescence_search<node>(alpha, beta, ply);
 
+    // avoid pruning too aggressively for in check and pv nodes
     if (is_in_check || is_pv_node)
         goto moveloop;
 
-    static_eval = tthit ? ttscore : evaluate(board);
+    // STATIC BOARD EVALUATION
+    search_info[ply].eval = tthit ? ttscore : evaluate(board);
 
     // REVERSE FUTILITY PRUNING (RFP)
     if (ttmove != Move::NO_MOVE && !board.isCapture(ttmove))
     {
-        int margin = 150 * depth;
+        const int margin = 150 * depth;
 
-        if (static_eval >= beta + margin)
-            return static_eval;
+        if (search_info[ply].eval >= beta + margin)
+            return search_info[ply].eval;
     }
 
     // NULL MOVE PRUNING (NMP)
-    if (depth >= 3 && static_eval >= beta)
+    if (depth >= 3 && search_info[ply].eval >= beta)
     {
         board.makeNullMove();
-        int nullmove_score = -negamax_search<NON_PV>(-beta, -beta + 1, depth - 3, ply + 1);
+        const int nullmove_score = -negamax_search<CUT>(-beta, -beta + 1, depth - 3, ply + 1);
         board.unmakeNullMove();
 
         if (nullmove_score >= beta)
@@ -143,14 +149,14 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     }
 
 moveloop:
-    // initializing variables
+    // MOVE LOOP INITIALIZATION
+    int  score;
     int  bestscore = -VALUE_INF;
+    int  movecount = 0;
     Move bestmove  = Move::NO_MOVE;
     Move move      = Move::NO_MOVE;
-    int  movecount = 0;
-    int  score;
 
-    // generating legal moves
+    // MOVE GENERATION AND ORDERING
     Movelist moves;
     movegen::legalmoves(moves, board);
 
@@ -158,60 +164,58 @@ moveloop:
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
         movecount++;
-        bool is_capture = board.isCapture(move);
-        int  newdepth   = depth - 1;
+        const bool is_capture = board.isCapture(move);
+        const int  new_depth  = depth - 1;
 
         nodes++;
         board.makeMove(move);
+        search_info[ply].currmove = move;
 
         // LATE MOVE REDUCTION (LMR)
         // clang-format off
-        bool do_lmr = depth >= 3
-                && movecount > 2
-                && !is_root_node
-                && !is_in_check
-                && !is_pv_node
-                && !is_capture
-                && move.typeOf() != Move::PROMOTION
-                && move != killer_moves[ply][0]
-                && move != killer_moves[ply][1];
+        const bool do_lmr = depth >= 3
+                         && movecount > 2
+                         && is_cut_node
+                         && !is_in_check
+                         && !is_capture
+                         && move.typeOf() != Move::PROMOTION
+                         && move != killer_moves[ply][0]
+                         && move != killer_moves[ply][1];
         // clang-format on
 
+        bool do_null_window_search_at_full_depth;
         if (do_lmr)
         {
-            int reduction = reduction_table[depth][movecount];
-            newdepth      = std::max(1, depth - 1 - reduction);
+            // Try a null window search at reduced depth
+            const int reduced_depth = std::max(1, depth - 1 - reduction_table[depth][movecount]);
+            score = -negamax_search<CUT>(-alpha - 1, -alpha, reduced_depth, ply + 1);
 
-            // Do reduced depth search with null window
-            score = -negamax_search<NON_PV>(-alpha - 1, -alpha, newdepth, ply + 1);
-
-            // If score exceeds alpha, do full depth search
-            if (score > alpha)
-                score = -negamax_search<NON_PV>(-alpha - 1, -alpha, depth - 1, ply + 1);
+            // Only do null window search at full depth if the reduced search beats alpha
+            // and we actually reduced the depth (to avoid doing the same search twice)
+            do_null_window_search_at_full_depth = score > alpha && reduced_depth < new_depth;
         }
         else
-        {
-            // PRINCIPAL VARIATION SEARCH (PVS)
-            if (movecount == 1)
-                score = -negamax_search<node>(-beta, -alpha, newdepth, ply + 1);
-            else
-            {
-                // Null window search first
-                score = -negamax_search<NON_PV>(-alpha - 1, -alpha, newdepth, ply + 1);
+            do_null_window_search_at_full_depth = is_cut_node || movecount > 1;
 
-                // If score falls within window and we're in a PV node, do full window search
-                if (score > alpha && score < beta && is_pv_node)
-                    score = -negamax_search<PV>(-beta, -alpha, newdepth, ply + 1);
-            }
-        }
+        if (do_null_window_search_at_full_depth)
+            score = -negamax_search<CUT>(-alpha - 1, -alpha, new_depth, ply + 1);
+
+        // PRINCIPAL VARIATION SEARCH (PVS)
+        // For PV nodes, we do a full window search at full depth in two cases:
+        // 1. First move of the node
+        // 2. The score falls within the alpha-beta window
+        if (is_pv_node && ((score > alpha && score < beta) || movecount == 1))
+            score = -negamax_search<PV>(-beta, -alpha, new_depth, ply + 1);
 
         board.unmakeMove(move);
 
-        // Early exit if search should be stopped: we should not be updating bounds or bestscore
+        // If search has ended prematurely, return immediately without updating anything
+        // This ensures we don't store incomplete or incorrect search results
         if (stop_search)
             return VALUE_NONE;
         assert(score != -VALUE_NONE);
 
+        // BEST SCORE AND BOUND UPDATES
         if (score > bestscore)
         {
             bestscore = score;
@@ -221,37 +225,20 @@ moveloop:
                 alpha    = score;
                 bestmove = move;
 
-                // Update principal variation:
+                // PRINCIPAL VARIATION UPDATE
                 pv_table[ply][ply] = move;
-
-                // copying pv from the ply just after
                 for (int nextply = ply + 1; nextply < pv_length[ply + 1]; nextply++)
                     pv_table[ply][nextply] = pv_table[ply + 1][nextply];
-
-                // update current pv length from the ply just after
                 pv_length[ply] = pv_length[ply + 1];
             }
         }
 
+        // BETA CUTOFF
         if (score >= beta)
         {
-            // BETA CUTOFF: KILLER & HISTORY UPDATES
+            // KILLER & HISTORY UPDATES
             if (!is_capture)
-            {
-                // Store killer moves
-                if (move != killer_moves[ply][0])
-                {
-                    // Shift the previous killer and store the new one
-                    killer_moves[ply][1] = killer_moves[ply][0];
-                    killer_moves[ply][0] = move;
-                }
-
-                // Update History heuristics
-                int& history_entry = history_table[static_cast<int>(board.sideToMove())]
-                                                  [move.from().index()][move.to().index()];
-                int bonus     = depth * depth;
-                history_entry = std::clamp(history_entry + bonus, 0, MAX_HISTORY_VALUE);
-            }
+                update_quiet_heuristics(move, ply, depth);
 
             break;
         }
@@ -262,23 +249,27 @@ moveloop:
         return board.inCheck() ? mated_in(ply) : 0;
 
     // TRANSPOSITION TABLE STORE
-    Bound bound = bestscore >= beta                         ? BOUND_LOWER
-                : (is_pv_node && bestmove != Move::NO_MOVE) ? BOUND_EXACT
-                                                            : BOUND_UPPER;
+    const Bound bound = bestscore >= beta                         ? BOUND_LOWER
+                      : (is_pv_node && bestmove != Move::NO_MOVE) ? BOUND_EXACT
+                                                                  : BOUND_UPPER;
     tt.store(board.hash(), depth, bestscore, bestmove, bound);
 
     return bestscore;
 }
 
-template<Node node>
+template<NodeType node>
 int Engine::quiescence_search(int alpha, int beta, int ply) {
+    // TIME CHECK
     if (time_is_up())
         return VALUE_NONE;
 
+    // MAX DEPTH CHECK
     if (ply >= MAX_PLY)
         return evaluate(board);
 
-    constexpr bool is_pv_node = node == PV;
+    // NODE CLASSIFICATION
+    constexpr bool is_cut_node = (node == CUT);
+    constexpr bool is_pv_node  = !is_cut_node;
 
     // DRAW DETECTION
     if (board.isRepetition(1 + is_pv_node))
@@ -293,7 +284,7 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
     // TRANSPOSITION TABLE CUTOFF
     // clang-format off
     if (tthit
-    &&  !is_pv_node
+    &&  is_cut_node
     &&  ttscore != VALUE_NONE
     &&   ((tte->bound == BOUND_EXACT)
        || (tte->bound == BOUND_LOWER && ttscore >= beta)
@@ -303,16 +294,19 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
 
     // STAND PAT EVALUATION
     int bestscore = evaluate(board);
+
     if (bestscore >= beta)
         return bestscore;
+
     if (bestscore > alpha)
         alpha = bestscore;
 
-    // initializing variables
+    // MOVE LOOP INITIALIZATION
+    int  score;
     Move bestmove = Move::NO_MOVE;
     Move move     = Move::NO_MOVE;
 
-    // generating capture moves
+    // MOVE GENERATION AND ORDERING
     Movelist moves;
     movegen::legalmoves<movegen::MoveGenType::CAPTURE>(moves, board);
 
@@ -325,14 +319,16 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
 
         nodes++;
         board.makeMove(move);
-        int score = -quiescence_search<node>(-beta, -alpha, ply + 1);
+        score = -quiescence_search<node>(-beta, -alpha, ply + 1);
         board.unmakeMove(move);
 
-        // Early exit if search should be stopped: we should not be updating bounds or bestscore
+        // If search has ended prematurely, return immediately without updating anything
+        // This ensures we don't store incomplete or incorrect search results
         if (stop_search)
             return VALUE_NONE;
         assert(score != -VALUE_NONE);
 
+        // BEST SCORE AND BOUND UPDATES
         if (score > bestscore)
         {
             bestscore = score;
@@ -344,6 +340,7 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
             }
         }
 
+        // BETA CUTOFF
         if (score >= beta)
             break;
     }
@@ -351,7 +348,6 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
     // TRANSPOSITION TABLE STORE
     Bound bound = bestscore >= beta ? BOUND_LOWER : BOUND_UPPER;
     tt.store(board.hash(), DEPTH_QS, bestscore, bestmove, bound);
-
 
     return bestscore;
 }

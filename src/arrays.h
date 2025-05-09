@@ -208,8 +208,9 @@ namespace pst {
     
 }  // namespace pst
 
+// values are from https://hxim.github.io/Stockfish-Evaluation-Guide/
 namespace eval {
-    // Mobility bonus arrays (directly from Stockfish)
+    // Mobility bonus arrays
     constexpr std::array<int, 9> knight_mobility_mg = {-62, -53, -12, -4, 3, 13, 22, 28, 33};
     constexpr std::array<int, 9> knight_mobility_eg = {-81, -56, -31, -16, 5, 11, 17, 20, 25};
     
