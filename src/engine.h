@@ -15,10 +15,10 @@ using namespace chess;
  * Different node types receive different treatment during search,
  * affecting pruning decisions and move ordering strategies.
  */
-enum Node {
-    PV,
-    NON_PV,
-    ROOT
+enum NodeType {
+    PV,   // Principal Variation node - full window search
+    CUT,  // Cut node - null window search
+    ROOT  // Root node - full window search
 };
 
 /**
@@ -37,24 +37,24 @@ class Engine {
 
     /**
      * @brief Performs iterative deepening search to find the best move
-     * @param MAX_PLY Maximum search depth to consider
+     * @param max_depth Maximum search depth to consider
      * @return Best move found from the latest fully searched depth
      */
-    Move iterative_deepening(int MAX_PLY);
+    Move iterative_deepening(int max_depth);
 
     /**
      * @brief Principal alpha-beta negamax search implementation
      *
      * called recursively until depth reaches 0
      *
-     * @tparam nodetype Type of node (PV, NON_PV, ROOT) affecting search behavior
+     * @tparam node Type of node (PV, CUT, ROOT) affecting search behavior
      * @param alpha Lower bound of the search window
      * @param beta Upper bound of the search window
      * @param depth Remaining search depth
      * @param ply Current distance from root position
      * @return Position score from the perspective of the side to move
      */
-    template<Node node>
+    template<NodeType node>
     int negamax_search(int alpha, int beta, int depth, int ply);
 
     /**
@@ -62,13 +62,14 @@ class Engine {
      *
      * Called recursively, once negamax_search() reaches a leaf node (depth 0)
      *
+     * @tparam node Type of node (PV, CUT, ROOT) affecting search behavior
      * @param alpha Lower bound of the search window
      * @param beta Upper bound of the search window
      * @param depth Remaining search depth (usually negative in quiescence)
      * @param ply Current distance from root position
      * @return Stable position score after capturing sequences
      */
-    template<Node node>
+    template<NodeType node>
     int quiescence_search(int alpha, int beta, int ply);
 
     /**
@@ -128,26 +129,28 @@ class Engine {
      */
     void init_tables();
 
-    // Member variables
-    int        history_table[2][64][64];
+    // Search tables
+    int        history_table[NUM_COLORS][BOARD_SIZE][BOARD_SIZE];
     int        reduction_table[MAX_PLY][MAX_MOVES];
-    Move       pv_table[MAX_PLY][MAX_PLY];
     int        pv_length[MAX_PLY];
-    Move       killer_moves[MAX_PLY][2];
-    Move       counter_moves[64][64];
+    Move       pv_table[MAX_PLY][MAX_PLY];
+    Move       killer_moves[MAX_PLY][NUM_KILLERS];
+    Move       counter_moves[BOARD_SIZE][BOARD_SIZE];
     SearchInfo search_info[MAX_PLY + 4];
 
+    // Search statistics and state
+    // Total nodes searched
     uint64_t nodes = 0;
-
+    // Current position
     Board board;
-
+    // Search limits
     Limits limits;
-
+    // Search termination flag
     bool stop_search = false;
-
+    // Search start time
     std::chrono::high_resolution_clock::time_point starttime;
-
+    // Transposition table
     TranspositionTable tt{};
-
+    // Debug output flag
     bool debug = true;
 };
