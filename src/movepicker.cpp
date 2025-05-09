@@ -54,7 +54,7 @@ Move MovePicker::next_move() {
         [[fallthrough]];
 
     case Phase::KILLER2 :
-        phase = Phase::QUIET;
+        phase = Phase::COUNTER;
 
         if (killer2 != Move::NO_MOVE)
             return killer2;
