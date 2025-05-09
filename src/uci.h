@@ -50,6 +50,14 @@ class UCIEngine {
      */
     void print_engine_info();
 
+    /**
+     * @brief Handles the debug UCI command
+     * 
+     * Toggles debug mode on/off in the engine. When debug is on,
+     * the engine will output additional information during search.
+     * 
+     * @param is Input stream containing the debug command parameters
+     */
     void debug(std::istringstream& is);
 
     Engine engine;

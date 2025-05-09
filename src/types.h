@@ -3,20 +3,27 @@
 
 using namespace chess;
 
-constexpr int MAX_PLY   = 64;
-constexpr int MAX_MOVES = 128;
+// Board configuration
+constexpr int BOARD_SIZE  = 64;  // Maximum number of squares
+constexpr int NUM_COLORS  = 2;   // White and black
+constexpr int NUM_KILLERS = 2;   // Killer moves per ply
 
-constexpr int VALUE_MATE = 32000;
-constexpr int VALUE_INF  = VALUE_MATE + 1;
-constexpr int VALUE_NONE = VALUE_MATE + 2;
+// Search bounds
+constexpr int MAX_PLY   = 64;   // Maximum search depth
+constexpr int MAX_MOVES = 128;  // Maximum legal moves per position
 
-constexpr int VALUE_MATE_IN_PLY  = VALUE_MATE - MAX_PLY;
-constexpr int VALUE_MATED_IN_PLY = -VALUE_MATE_IN_PLY;
+// Evaluation bounds
+constexpr int VALUE_MATE         = 32000;                 // Checkmate score
+constexpr int VALUE_INF          = VALUE_MATE + 1;        // Infinity
+constexpr int VALUE_NONE         = VALUE_MATE + 2;        // No value
+constexpr int VALUE_MATE_IN_PLY  = VALUE_MATE - MAX_PLY;  // Mate distance bonus
+constexpr int VALUE_MATED_IN_PLY = -VALUE_MATE_IN_PLY;    // Mated distance penalty
 
-constexpr int DEPTH_QS = 0;
+// Transposition table
+constexpr int DEPTH_QS = 0;  // Depth value for quiescence search entries in TT
 
-// Maximum value for an entry in the history table
-constexpr int MAX_HISTORY_VALUE = 16384;
+// History table
+constexpr int MAX_HISTORY_VALUE = 16384;  // Maximum value for an entry in the history table
 
 /**
  * @brief Checks if a score indicates a checkmate
@@ -75,6 +82,6 @@ struct Limits {
  * @brief Stores search information for each ply during negamax
  */
 struct SearchInfo {
-    Move currentmove = Move::NO_MOVE;  ///< Current move being searched
-    int  eval        = VALUE_NONE;     ///< Static evaluation at this position
+    Move currmove = Move::NO_MOVE;  ///< Current move being searched
+    int  eval     = VALUE_NONE;     ///< Static evaluation at this position
 };

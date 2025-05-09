@@ -1,22 +1,21 @@
 #include "see.h"
 
 
-
 bool SEE(Board board, Move move, int treshold) {
-    Square to   = move.to();
-    Square from = move.from();
+    Square      to              = move.to();
+    Square      from            = move.from();
     const Color initiating_side = board.at<Piece>(from).color();
 
-    int swap = SEEvalues[board.at<PieceType>(to)] - treshold;
+    int exchange_value = SEEvalues[board.at<PieceType>(to)] - treshold;
 
-    // If even before subtracting our own piece’s cost, the swap is losing, then refuse
-    if (swap < 0)
+    // If even before subtracting our own piece's cost, the exchange is losing, then refuse
+    if (exchange_value < 0)
         return false;
 
-    swap -= SEEvalues[board.at<PieceType>(from)];
+    exchange_value -= SEEvalues[board.at<PieceType>(from)];
 
     // If the exchange is still winning after this capture, then accept
-    if (swap >= 0)
+    if (exchange_value >= 0)
         return true;
 
     // Get all pieces' squares
@@ -60,16 +59,16 @@ bool SEE(Board board, Move move, int treshold) {
             pt = PieceType::QUEEN;
         else if (my_attackers & board.pieces(PieceType::KING))
             pt = PieceType::KING;
-        assert (pt != PieceType::NONE);
+        assert(pt != PieceType::NONE);
 
         // alternate who is capturing next
         side = ~side;
 
-        // Negamax the swap value
-        swap = -swap - 1 - SEEvalues[pt];
+        // Negamax the exchange value
+        exchange_value = -exchange_value - 1 - SEEvalues[pt];
 
-        // if the new swap indicates a winning net results, then accept
-        if (swap >= 0)
+        // if the new exchange value indicates a winning net results, then accept
+        if (exchange_value >= 0)
         {
             if ((pt == PieceType::KING) && (attackers & board.us(side)))
                 side = ~side;

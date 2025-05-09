@@ -132,7 +132,7 @@ void MovePicker::score_moves() {
             // // Score counter moves
             // if (ply > 0)
             // {
-            //     Move prevmove = engine.search_info[ply - 1].currentmove;
+            //     Move prevmove = engine.search_info[ply - 1].currmove;
             //     if (prevmove != Move::NO_MOVE
             //         && move == engine.counter_moves[prevmove.from().index()][prevmove.to().index()])
             //     {
