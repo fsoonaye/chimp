@@ -157,10 +157,7 @@ moveloop:
     Move move      = Move::NO_MOVE;
 
     // MOVE GENERATION AND ORDERING
-    Movelist moves;
-    movegen::legalmoves(moves, board);
-
-    MovePicker mp(*this, moves, ttmove, ply);
+    MovePicker<movegen::MoveGenType::ALL> mp(*this, tthit ? ttmove : Move::NO_MOVE, ply);
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
         movecount++;
@@ -307,10 +304,7 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
     Move move     = Move::NO_MOVE;
 
     // MOVE GENERATION AND ORDERING
-    Movelist moves;
-    movegen::legalmoves<movegen::MoveGenType::CAPTURE>(moves, board);
-
-    MovePicker mp(*this, moves, ttmove, ply);
+    MovePicker<movegen::MoveGenType::CAPTURE> mp(*this, tthit ? ttmove : Move::NO_MOVE, ply);
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
         // STATIC EXCHANGE EVALUATION (SEE) PRUNING

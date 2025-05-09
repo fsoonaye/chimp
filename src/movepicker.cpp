@@ -1,85 +1,120 @@
 #include "movepicker.h"
+#include "see.h"
 
-MovePicker::MovePicker(const Engine& engine, Movelist& moves, Move ttmove, int ply) :
-    engine(engine),
-    movelist(moves),
-    ttmove(ttmove),
-    ply(ply) {}
-
-Move MovePicker::next_move() {
-    switch (phase)
+template<movegen::MoveGenType GenType>
+Move MovePicker<GenType>::next_move() {
+    switch (stage)
     {
-    case Phase::TT :
-        phase = Phase::SCORE;
-
-        if (ttmove != Move::NO_MOVE && is_in_movelist(ttmove))
+    case Stage::TT :
+        stage = Stage::GENERATE_CAPTURES;
+        if (ttmove != Move::NO_MOVE)
             return ttmove;
-
         [[fallthrough]];
 
-    case Phase::SCORE :
-        phase = Phase::CAPTURES;
-
-        // Score all moves before starting to pick them
-        score_moves();
-
+    case Stage::GENERATE_CAPTURES :
+        stage = Stage::GOOD_CAPTURES;
+        movegen::legalmoves<movegen::MoveGenType::CAPTURE>(capture_moves, engine.board);
+        score_capture_moves();
+        capture_idx = 0;
         [[fallthrough]];
 
-    case Phase::CAPTURES :
-        while (index < movelist.size())
+    case Stage::GOOD_CAPTURES :
+        while (capture_idx < capture_moves.size())
         {
-            int best_idx = find_best_from(index);
+            int best_idx = find_best_from(capture_idx, capture_moves);
+            std::swap(capture_moves[capture_idx], capture_moves[best_idx]);
 
-            // If we've exhausted all captures, move to next phase
-            if (movelist[best_idx].score() < SCORE_CAPTURE)
+            // If we've exhausted all good captures, move to next phase
+            if (capture_moves[capture_idx].score() < SCORE_CAPTURE)
                 break;
 
-            std::swap(movelist[index], movelist[best_idx]);
+            // Skip TT move if we already returned it
+            if (capture_moves[capture_idx] != ttmove)
+                return capture_moves[capture_idx++];
 
-            if (movelist[index] != ttmove)
-                return movelist[index++];
-
-            index++;
+            capture_idx++;
         }
 
-        phase = Phase::KILLER1;
+        if constexpr (GenType == movegen::MoveGenType::CAPTURE)
+        {
+            stage = Stage::BAD_CAPTURES;
+        }
+        else
+        {
+            stage = Stage::GENERATE_QUIET;
+        }
         [[fallthrough]];
 
-    case Phase::KILLER1 :
-        phase = Phase::KILLER2;
+    case Stage::GENERATE_QUIET :
+        if constexpr (GenType == movegen::MoveGenType::ALL)
+        {
+            stage = Stage::KILLER1;
+            movegen::legalmoves<movegen::MoveGenType::QUIET>(quiet_moves, engine.board);
+            score_quiet_moves();
+            quiet_idx = 0;
+            [[fallthrough]];
+        }
+        else
+        {
+            stage = Stage::BAD_CAPTURES;
+            [[fallthrough]];
+        }
 
+    case Stage::KILLER1 :
+        stage = Stage::KILLER2;
         if (killer1 != Move::NO_MOVE && killer1 != ttmove)
             return killer1;
-
         [[fallthrough]];
 
-    case Phase::KILLER2 :
-        phase = Phase::QUIET;
-
+    case Stage::KILLER2 :
+        stage = Stage::COUNTER;
         if (killer2 != Move::NO_MOVE && killer2 != ttmove && killer2 != killer1)
             return killer2;
-
         [[fallthrough]];
 
-    case Phase::COUNTER :
-        phase = Phase::QUIET;
-
+    case Stage::COUNTER :
+        stage = Stage::QUIET;
         if (counter != Move::NO_MOVE && counter != ttmove && counter != killer1
             && counter != killer2)
             return counter;
+        [[fallthrough]];
 
-    case Phase::QUIET :
-        while (index < movelist.size())
+    case Stage::QUIET :
+        while (quiet_idx < quiet_moves.size())
         {
-            int best_idx = find_best_from(index);
+            int best_idx = find_best_from(quiet_idx, quiet_moves);
+            std::swap(quiet_moves[quiet_idx], quiet_moves[best_idx]);
 
-            std::swap(movelist[index], movelist[best_idx]);
+            // Skip moves we've already returned
+            if (quiet_moves[quiet_idx] != ttmove && quiet_moves[quiet_idx] != killer1
+                && quiet_moves[quiet_idx] != killer2 && quiet_moves[quiet_idx] != counter)
+            {
+                assert(quiet_moves[quiet_idx].score()
+                       < SCORE_CAPTURE);  // This should be true for quiet moves
+                return quiet_moves[quiet_idx++];
+            }
 
-            if (movelist[index] != ttmove && movelist[index] != killer1
-                && movelist[index] != killer2)
-                return movelist[index++];
+            quiet_idx++;
+        }
 
-            index++;
+        stage = Stage::BAD_CAPTURES;
+        [[fallthrough]];
+
+    case Stage::BAD_CAPTURES :
+        while (capture_idx < capture_moves.size())
+        {
+            int best_idx = find_best_from(capture_idx, capture_moves);
+            std::swap(capture_moves[capture_idx], capture_moves[best_idx]);
+
+            // Skip TT move if we already returned it
+            if (capture_moves[capture_idx] != ttmove)
+            {
+                assert(capture_moves[capture_idx].score()
+                       < SCORE_CAPTURE);  // This should be true for bad captures
+                return capture_moves[capture_idx++];
+            }
+
+            capture_idx++;
         }
 
         return Move::NO_MOVE;
@@ -89,32 +124,41 @@ Move MovePicker::next_move() {
     }
 }
 
-int MovePicker::find_best_from(int start_idx) {
+template<movegen::MoveGenType GenType>
+int MovePicker<GenType>::find_best_from(int start_idx, const Movelist& moves) {
     int best_idx = start_idx;
-    for (int i = start_idx + 1; i < movelist.size(); i++)
+    for (int i = start_idx + 1; i < moves.size(); i++)
     {
-        if (movelist[i].score() > movelist[best_idx].score())
+        if (moves[i].score() > moves[best_idx].score())
             best_idx = i;
     }
     return best_idx;
 }
 
-
-bool MovePicker::is_in_movelist(Move move) const {
-    return std::find(movelist.begin(), movelist.end(), move) != movelist.end();
+template<movegen::MoveGenType GenType>
+bool MovePicker<GenType>::is_in_movelist(Move move, const Movelist& moves) const {
+    return std::find(moves.begin(), moves.end(), move) != moves.end();
 }
 
-void MovePicker::score_moves() {
-    for (auto& move : movelist)
+template<movegen::MoveGenType GenType>
+void MovePicker<GenType>::score_capture_moves() {
+    for (auto& move : capture_moves)
+    {
+        int16_t score = SEE(engine.board, move, 0) ? SCORE_CAPTURE + get_mvvlva_score(move)
+                                                   : get_mvvlva_score(move);
+
+        move.setScore(score);
+    }
+}
+
+template<movegen::MoveGenType GenType>
+void MovePicker<GenType>::score_quiet_moves() {
+    for (auto& move : quiet_moves)
     {
         int16_t score = 0;
 
-        // Score captures using MVV-LVA
-        if (engine.board.isCapture(move))
-            score = SCORE_CAPTURE + get_mvvlva_score(move);
-
         // Score killer moves
-        else if (move == engine.killer_moves[ply][0])
+        if (move == engine.killer_moves[ply][0])
         {
             killer1 = move;
             score   = SCORE_KILLER1;
@@ -125,39 +169,38 @@ void MovePicker::score_moves() {
             score   = SCORE_KILLER2;
         }
 
-        // Score quiet moves
+        // Score counter moves
+        else if (!is_root_node)
+        {
+            Move prevmove = engine.search_info[ply - 1].currmove;
+            if (prevmove != Move::NO_MOVE
+                && move == engine.counter_moves[prevmove.from().index()][prevmove.to().index()])
+            {
+                counter = move;
+                score   = SCORE_COUNTER;
+            }
+        }
+
+        // Score remaining quiet moves
         else
         {
-
-            // // Score counter moves
-            // if (ply > 0)
-            // {
-            //     Move prevmove = engine.search_info[ply - 1].currmove;
-            //     if (prevmove != Move::NO_MOVE
-            //         && move == engine.counter_moves[prevmove.from().index()][prevmove.to().index()])
-            //     {
-            //         counter = move;
-            //         score   = SCORE_COUNTER;
-            //     }
-            // }
-
-            // // Score remaining quiet moves
-            // else
-            // {
             int side     = engine.board.sideToMove();
             int from_idx = move.from().index();
             int to_idx   = move.to().index();
             score        = engine.history_table[side][from_idx][to_idx];
-            //     }
         }
 
         move.setScore(score);
     }
 }
 
-int16_t MovePicker::get_mvvlva_score(const Move& move) {
+template<movegen::MoveGenType GenType>
+int16_t MovePicker<GenType>::get_mvvlva_score(const Move& move) {
     int victim   = engine.board.at<PieceType>(move.to());
     int attacker = engine.board.at<PieceType>(move.from());
 
     return mvvlva_array[victim][attacker];
 }
+
+template class MovePicker<movegen::MoveGenType::ALL>;
+template class MovePicker<movegen::MoveGenType::CAPTURE>;
