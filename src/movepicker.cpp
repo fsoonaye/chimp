@@ -75,8 +75,11 @@ Move MovePicker::next_move() {
             std::swap(movelist[index], movelist[best_idx]);
 
             if (movelist[index] != ttmove && movelist[index] != killer1
-                && movelist[index] != killer2)
+                && movelist[index] != killer2 && movelist[index] != counter)
+            {
+                assert(movelist[index].score() < SCORE_CAPTURE);
                 return movelist[index++];
+            }
 
             index++;
         }
