@@ -36,13 +36,10 @@ Move MovePicker<GenType>::next_move() {
         }
 
         if constexpr (GenType == movegen::MoveGenType::CAPTURE)
-        {
             stage = Stage::BAD_CAPTURES;
-        }
         else
-        {
             stage = Stage::GENERATE_QUIET;
-        }
+
         [[fallthrough]];
 
     case Stage::GENERATE_QUIET :
@@ -169,17 +166,17 @@ void MovePicker<GenType>::score_quiet_moves() {
             score   = SCORE_KILLER2;
         }
 
-        // Score counter moves
-        else if (!is_root_node)
-        {
-            Move prevmove = engine.search_info[ply - 1].currmove;
-            if (prevmove != Move::NO_MOVE
-                && move == engine.counter_moves[prevmove.from().index()][prevmove.to().index()])
-            {
-                counter = move;
-                score   = SCORE_COUNTER;
-            }
-        }
+        // // Score counter moves
+        // else if (!is_root_node)
+        // {
+        //     Move prevmove = engine.search_info[ply - 1].currmove;
+        //     if (prevmove != Move::NO_MOVE
+        //         && move == engine.counter_moves[prevmove.from().index()][prevmove.to().index()])
+        //     {
+        //         counter = move;
+        //         score   = SCORE_COUNTER;
+        //     }
+        // }
 
         // Score remaining quiet moves
         else
