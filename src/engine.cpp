@@ -8,6 +8,7 @@
 #include <string>
 #include <cmath>
 
+
 void Engine::update_quiet_heuristics(Move move, int ply, int depth) {
     // KILLER MOVE UPDATE
     if (move != killer_moves[ply][0])
@@ -18,8 +19,8 @@ void Engine::update_quiet_heuristics(Move move, int ply, int depth) {
 
     // COUNTER MOVE UPDATE
     if (ply > 0)
-        counter_moves[search_info[ply - 1].currentmove.from().index()]
-                     [search_info[ply - 1].currentmove.to().index()] = move;
+        counter_moves[search_info[ply - 1].currmove.from().index()]
+                     [search_info[ply - 1].currmove.to().index()] = move;
 
     // HISTORY HEURISTICS UPDATE
     int& entry = history_table[board.sideToMove()][move.from().index()][move.to().index()];
