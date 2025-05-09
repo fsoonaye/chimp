@@ -48,7 +48,7 @@ Move MovePicker::next_move() {
     case Phase::KILLER1 :
         phase = Phase::KILLER2;
 
-        if (killer1 != Move::NO_MOVE && killer1 != ttmove)
+        if (killer1 != Move::NO_MOVE)
             return killer1;
 
         [[fallthrough]];
@@ -56,7 +56,7 @@ Move MovePicker::next_move() {
     case Phase::KILLER2 :
         phase = Phase::QUIET;
 
-        if (killer2 != Move::NO_MOVE && killer2 != ttmove && killer2 != killer1)
+        if (killer2 != Move::NO_MOVE)
             return killer2;
 
         [[fallthrough]];
@@ -64,8 +64,7 @@ Move MovePicker::next_move() {
     case Phase::COUNTER :
         phase = Phase::QUIET;
 
-        if (counter != Move::NO_MOVE && counter != ttmove && counter != killer1
-            && counter != killer2)
+        if (counter != Move::NO_MOVE)
             return counter;
 
     case Phase::QUIET :
@@ -128,27 +127,26 @@ void MovePicker::score_moves() {
         // Score quiet moves
         else
         {
+            // Score counter moves
+            if (ply > 0)
+            {
+                Move prevmove = engine.search_info[ply - 1].currmove;
+                if (prevmove != Move::NO_MOVE
+                    && move == engine.counter_moves[prevmove.from().index()][prevmove.to().index()])
+                {
+                    counter = move;
+                    score   = SCORE_COUNTER;
+                }
+            }
 
-            // // Score counter moves
-            // if (ply > 0)
-            // {
-            //     Move prevmove = engine.search_info[ply - 1].currmove;
-            //     if (prevmove != Move::NO_MOVE
-            //         && move == engine.counter_moves[prevmove.from().index()][prevmove.to().index()])
-            //     {
-            //         counter = move;
-            //         score   = SCORE_COUNTER;
-            //     }
-            // }
-
-            // // Score remaining quiet moves
-            // else
-            // {
-            int side     = engine.board.sideToMove();
-            int from_idx = move.from().index();
-            int to_idx   = move.to().index();
-            score        = engine.history_table[side][from_idx][to_idx];
-            //     }
+            // Score remaining quiet moves
+            else
+            {
+                int side     = engine.board.sideToMove();
+                int from_idx = move.from().index();
+                int to_idx   = move.to().index();
+                score        = engine.history_table[side][from_idx][to_idx];
+            }
         }
 
         move.setScore(score);
