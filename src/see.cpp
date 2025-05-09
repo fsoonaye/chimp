@@ -1,7 +1,7 @@
 #include "see.h"
 
 
-bool SEE(Board board, Move move, int treshold) {
+bool SEE(const Board board, const Move move, int treshold) {
     Square      to              = move.to();
     Square      from            = move.from();
     const Color initiating_side = board.at<Piece>(from).color();

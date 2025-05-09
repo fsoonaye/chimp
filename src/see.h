@@ -16,7 +16,7 @@ using namespace chess;
  * @param threshold Minimum score for the move to be considered favorable
  * @return True if the move meets or exceeds the threshold score
  */
-bool SEE(Board board, Move move, int threshold);
+bool SEE(const Board board, const Move move, int threshold);
 
 /**
  * @brief Material values used for Static Exchange Evaluation
