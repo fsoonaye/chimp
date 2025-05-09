@@ -121,7 +121,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     if (depth <= 0)
         return quiescence_search<node>(alpha, beta, ply);
 
-    // avoid pruning too aggressively for in check and pv nodes
+    // avoid pruning too aggressively when in check and for pv nodes
     if (is_in_check || is_pv_node)
         goto moveloop;
 
@@ -202,7 +202,7 @@ moveloop:
 
         // PRINCIPAL VARIATION SEARCH (PVS)
         // For PV nodes, we do a full window search at full depth in two cases:
-        // 1. First move of the node
+        // 1. First move of the node (i.e. the ttmove when available)
         // 2. The score falls within the alpha-beta window
         if (is_pv_node && ((score > alpha && score < beta) || movecount == 1))
             score = -negamax_search<PV>(-beta, -alpha, new_depth, ply + 1);
