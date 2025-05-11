@@ -16,25 +16,30 @@ Move Engine::iterative_deepening(int max_depth) {
     stop_search   = false;
     nodes         = 0;
     int  score    = -VALUE_INF;
+    int  depth    = 1;
     Move bestmove = Move::NO_MOVE;
     init_tables();
 
     // ITERATIVE DEEPENING LOOP
-    for (int depth = 1; depth <= max_depth; depth++)
+    for (; depth <= max_depth; depth++)
     {
         int prevscore = score;
         score         = aspiration_window_search(depth, prevscore);
-        bestmove      = pv_table[0][0];
 
         // TIME CHECK
         if (time_is_up())
             // current depth has been incompletely searched
-            // we print pv for the latest fully searched depth
+            // we return the best move for the latest fully searched depth
             break;
+
+        bestmove = pv_table[0][0];
 
         // SEARCH INFO OUTPUT
         print_search_info(depth, score, nodes, get_elapsedtime());
     }
+
+    if (depth == 1)
+        bestmove = pv_table[0][0];
 
     return bestmove;
 }
