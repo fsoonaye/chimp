@@ -12,18 +12,19 @@ Move Engine::get_bestmove(int depth) { return iterative_deepening(depth); }
 
 Move Engine::iterative_deepening(int max_depth) {
     // SEARCH INITIALIZATION
-    starttime   = std::chrono::high_resolution_clock::now();
-    stop_search = false;
-    nodes       = 0;
-    int  score;
+    starttime     = std::chrono::high_resolution_clock::now();
+    stop_search   = false;
+    nodes         = 0;
+    int  score    = -VALUE_INF;
     Move bestmove = Move::NO_MOVE;
     init_tables();
 
     // ITERATIVE DEEPENING LOOP
     for (int depth = 1; depth <= max_depth; depth++)
     {
-        score    = negamax_search<ROOT>(-VALUE_INF, VALUE_INF, depth, 0);
-        bestmove = pv_table[0][0];
+        int prevscore = score;
+        score         = aspiration_window_search(depth, prevscore);
+        bestmove      = pv_table[0][0];
 
         // TIME CHECK
         if (time_is_up())
@@ -36,6 +37,55 @@ Move Engine::iterative_deepening(int max_depth) {
     }
 
     return bestmove;
+}
+
+
+int Engine::aspiration_window_search(int depth, int prevscore) {
+    // SEARCH INITIALIZATION
+    int score = -VALUE_INF;
+    int alpha = -VALUE_INF;
+    int beta  = VALUE_INF;
+    int delta = 50;
+
+    // WINDOW SETUP
+    // For deeper searches, use a window around the previous score
+    if (depth >= 9)
+    {
+        alpha = prevscore - delta;
+        beta  = prevscore + delta;
+    }
+
+    // ASPIRATION WINDOW LOOP
+    while (true)
+    {
+        // WINDOW BOUNDS CHECK
+        if (alpha < -3500)
+            alpha = -VALUE_INF;
+
+        if (beta > 3500)
+            beta = VALUE_INF;
+
+        // SEARCH WITH CURRENT WINDOW
+        score = negamax_search<ROOT>(alpha, beta, depth, 0);
+
+        // WINDOW ADJUSTMENT
+        // If score is outside window, adjust and try again
+        if (score <= alpha)
+        {
+            beta  = (alpha + beta) / 2;
+            alpha = std::max(alpha - delta, -VALUE_INF);
+            delta += delta / 2;
+        }
+        else if (score >= beta)
+        {
+            beta = std::min(beta + delta, VALUE_INF);
+            delta += delta / 2;
+        }
+        else
+            break;
+    }
+
+    return score;
 }
 
 template<NodeType node>
@@ -98,7 +148,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
         goto moveloop;
 
     // TRANSPOSITION TABLE CUTOFF
-    if (!is_pv_node && tthit && ttscore != VALUE_NONE && tte->depth >= depth)
+    if (is_cut_node && tthit && ttscore != VALUE_NONE && tte->depth >= depth)
     {
         if (tte->bound == BOUND_EXACT)
             return ttscore;
