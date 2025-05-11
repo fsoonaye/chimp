@@ -45,7 +45,7 @@ int Engine::aspiration_window_search(int depth, int prevscore) {
     int score = -VALUE_INF;
     int alpha = -VALUE_INF;
     int beta  = VALUE_INF;
-    int delta = 50;
+    int delta = 30;
 
     // WINDOW SETUP
     // For deeper searches, use a window around the previous score
