@@ -68,6 +68,10 @@ int Engine::aspiration_window_search(int depth, int prevscore) {
         // SEARCH WITH CURRENT WINDOW
         score = negamax_search<ROOT>(alpha, beta, depth, 0);
 
+        // TIME CHECK
+        if (time_is_up())
+            return VALUE_NONE;
+
         // WINDOW ADJUSTMENT
         // If score is outside window, adjust and try again
         if (score <= alpha)
