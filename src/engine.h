@@ -43,6 +43,16 @@ class Engine {
     Move iterative_deepening(int max_depth);
 
     /**
+     * @brief Performs aspiration window search to find the best move
+     * @param alpha Lower bound of the search window
+     * @param beta Upper bound of the search window
+     * @param depth Remaining search depth
+     * @param ply Current distance from root position
+     * @return Best move found within the given constraints
+     */
+    int aspiration_window_search(int depth, int prevscore);
+
+    /**
      * @brief Principal alpha-beta negamax search implementation
      *
      * called recursively until depth reaches 0
