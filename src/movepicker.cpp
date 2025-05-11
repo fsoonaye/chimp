@@ -13,6 +13,8 @@ Move MovePicker<GenType>::next_move() {
 
     case Stage::GENERATE_CAPTURES :
         stage = Stage::GOOD_CAPTURES;
+
+        capture_moves.clear();
         movegen::legalmoves<movegen::MoveGenType::CAPTURE>(capture_moves, engine.board);
         score_capture_moves();
         capture_idx = 0;
@@ -36,7 +38,7 @@ Move MovePicker<GenType>::next_move() {
         }
 
         if constexpr (GenType == movegen::MoveGenType::CAPTURE)
-            stage = Stage::BAD_CAPTURES;
+            stage = Stage::END;
         else
             stage = Stage::GENERATE_QUIET;
 
@@ -46,6 +48,8 @@ Move MovePicker<GenType>::next_move() {
         if constexpr (GenType == movegen::MoveGenType::ALL)
         {
             stage = Stage::KILLER1;
+
+            quiet_moves.clear();
             movegen::legalmoves<movegen::MoveGenType::QUIET>(quiet_moves, engine.board);
             score_quiet_moves();
             quiet_idx = 0;
@@ -53,7 +57,7 @@ Move MovePicker<GenType>::next_move() {
         }
         else
         {
-            stage = Stage::BAD_CAPTURES;
+            stage = Stage::END;
             [[fallthrough]];
         }
 
@@ -82,12 +86,12 @@ Move MovePicker<GenType>::next_move() {
             int best_idx = find_best_from(quiet_idx, quiet_moves);
             std::swap(quiet_moves[quiet_idx], quiet_moves[best_idx]);
 
+            assert(quiet_moves[quiet_idx].score() < SCORE_CAPTURE);
+
             // Skip moves we've already returned
             if (quiet_moves[quiet_idx] != ttmove && quiet_moves[quiet_idx] != killer1
                 && quiet_moves[quiet_idx] != killer2 && quiet_moves[quiet_idx] != counter)
             {
-                assert(quiet_moves[quiet_idx].score()
-                       < SCORE_CAPTURE);  // This should be true for quiet moves
                 return quiet_moves[quiet_idx++];
             }
 
@@ -103,19 +107,18 @@ Move MovePicker<GenType>::next_move() {
             int best_idx = find_best_from(capture_idx, capture_moves);
             std::swap(capture_moves[capture_idx], capture_moves[best_idx]);
 
+            assert(capture_moves[capture_idx].score() < SCORE_CAPTURE);
+
             // Skip TT move if we already returned it
             if (capture_moves[capture_idx] != ttmove)
-            {
-                assert(capture_moves[capture_idx].score()
-                       < SCORE_CAPTURE);  // This should be true for bad captures
                 return capture_moves[capture_idx++];
-            }
 
             capture_idx++;
         }
 
         return Move::NO_MOVE;
 
+    case Stage::END :
     default :
         return Move::NO_MOVE;
     }
@@ -141,8 +144,13 @@ template<movegen::MoveGenType GenType>
 void MovePicker<GenType>::score_capture_moves() {
     for (auto& move : capture_moves)
     {
-        int16_t score = SEE(engine.board, move, 0) ? SCORE_CAPTURE + get_mvvlva_score(move)
-                                                   : get_mvvlva_score(move);
+        int16_t score;
+        if (GenType == movegen::MoveGenType::CAPTURE)
+            score = SCORE_CAPTURE + get_mvvlva_score(move);
+
+        else
+            score = SEE(engine.board, move, 0) ? SCORE_CAPTURE + get_mvvlva_score(move)
+                                               : get_mvvlva_score(move);
 
         move.setScore(score);
     }
