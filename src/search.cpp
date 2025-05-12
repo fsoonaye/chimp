@@ -191,6 +191,10 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     if (is_pv_node)
         goto moveloop;
 
+    // RAZORING
+    if (depth < 3 && search_info[ply].eval + 150 < alpha)
+        return quiescence_search<CUT>(alpha, beta, ply);
+
     // REVERSE FUTILITY PRUNING (RFP)
     if (ttmove != Move::NO_MOVE && !board.isCapture(ttmove))
     {
