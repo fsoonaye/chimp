@@ -103,6 +103,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     constexpr bool is_cut_node  = (node == CUT);
     constexpr bool is_pv_node   = !is_cut_node;
     const bool     is_in_check  = board.inCheck();
+    bool           improving    = false;
 
     // PRINCIPAL VARIATION INITIALIZATION
     pv_length[ply] = ply;
@@ -175,12 +176,20 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     if (depth <= 0)
         return quiescence_search<node>(alpha, beta, ply);
 
-    // avoid pruning too aggressively for in check and pv nodes
-    if (is_in_check || is_pv_node)
+    // avoid pruning too aggressively for in check nodes
+    if (is_in_check)
         goto moveloop;
 
     // STATIC BOARD EVALUATION
     search_info[ply].eval = tthit ? ttscore : evaluate(board);
+
+    if (ply > 2)
+        improving = search_info[ply - 2].eval != VALUE_NONE
+                 && search_info[ply - 2].eval < search_info[ply].eval;
+
+    // avoid pruning too aggressively for pv nodes
+    if (is_pv_node)
+        goto moveloop;
 
     // REVERSE FUTILITY PRUNING (RFP)
     if (ttmove != Move::NO_MOVE && !board.isCapture(ttmove))
@@ -228,10 +237,8 @@ moveloop:
         // LATE MOVE REDUCTION (LMR)
         // clang-format off
         const bool do_lmr = depth >= 3
-                         && movecount > 2
-                         && is_cut_node
+                         && movecount > 3 + 2 * is_pv_node
                          && !is_in_check
-                         && !is_capture
                          && move.typeOf() != Move::PROMOTION
                          && move != killer_moves[ply][0]
                          && move != killer_moves[ply][1];
@@ -240,8 +247,11 @@ moveloop:
         bool do_null_window_search_at_full_depth;
         if (do_lmr)
         {
-            // Try a null window search at reduced depth
-            const int reduced_depth = std::max(1, depth - 1 - reduction_table[depth][movecount]);
+            // Calculate reduced search depth for LMR
+            const int reduction =
+              reduction_table[depth][movecount] + improving - is_pv_node - is_capture;
+            const int reduced_depth = std::clamp(new_depth - reduction, 1, new_depth + 1);
+
             score = -negamax_search<CUT>(-alpha - 1, -alpha, reduced_depth, ply + 1);
 
             // Only do null window search at full depth if the reduced search beats alpha
