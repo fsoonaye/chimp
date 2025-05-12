@@ -201,10 +201,12 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     }
 
     // NULL MOVE PRUNING (NMP)
-    if (depth >= 3 && search_info[ply].eval >= beta)
+    if (depth >= 3 && search_info[ply].eval >= beta && search_info[ply].currmove != Move::NO_MOVE)
     {
+        const int reduction =
+          5 + std::min(4, depth / 5) + std::min(3, (search_info[ply].eval - beta) / 200);
         board.makeNullMove();
-        const int nullmove_score = -negamax_search<CUT>(-beta, -beta + 1, depth - 3, ply + 1);
+        int nullmove_score = -negamax_search<CUT>(-beta, -beta + 1, depth - reduction, ply + 1);
         board.unmakeNullMove();
 
         if (nullmove_score >= beta)
