@@ -137,7 +137,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     if (is_in_check)
         depth++;
 
-    // QUISCENCE SEARCH
+    // QUIESCENCE SEARCH
     if (depth <= 0)
         return quiescence_search<node>(alpha, beta, ply);
 
@@ -171,7 +171,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     if (!tthit)
         depth -= (depth >= 3) + is_pv_node;
 
-    // QUISCENCE SEARCH
+    // QUIESCENCE SEARCH
     if (depth <= 0)
         return quiescence_search<node>(alpha, beta, ply);
 
