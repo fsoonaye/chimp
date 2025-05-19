@@ -30,6 +30,11 @@ void Engine::update_quiet_heuristics(Move move, int ply, int depth) {
     entry += clamped_bonus - entry * clamped_bonus / MAX_HISTORY_VALUE;
 }
 
+int Engine::get_reduction(
+  int depth, int movecount, bool improving, bool is_pv_node, bool is_capture) {
+    return reduction_table[depth][movecount] + improving - is_pv_node - is_capture;
+}
+
 bool Engine::time_is_up() {
     if (stop_search)
         return true;

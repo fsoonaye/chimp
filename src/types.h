@@ -85,3 +85,11 @@ struct SearchInfo {
     Move currmove = Move::NO_MOVE;  ///< Current move being searched
     int  eval     = VALUE_NONE;     ///< Static evaluation at this position
 };
+
+struct Stack {
+    int      eval        = VALUE_NONE;
+    int      movecount   = 0;
+    Move     currmove    = Move::NO_MOVE;
+    bool     is_in_check = false;
+    uint16_t ply         = 0;
+};

@@ -44,13 +44,12 @@ class Engine {
 
     /**
      * @brief Performs aspiration window search to find the best move
-     * @param alpha Lower bound of the search window
-     * @param beta Upper bound of the search window
-     * @param depth Remaining search depth
-     * @param ply Current distance from root position
+     * @param depth starting search depth
+     * @param prevscore previous score
+     * @param ss Search stack
      * @return Best move found within the given constraints
      */
-    int aspiration_window_search(int depth, int prevscore);
+    int aspiration_window_search(int depth, int prevscore, Stack* ss);
 
     /**
      * @brief Principal alpha-beta negamax search implementation
@@ -65,7 +64,7 @@ class Engine {
      * @return Position score from the perspective of the side to move
      */
     template<NodeType node>
-    int negamax_search(int alpha, int beta, int depth, int ply);
+    int negamax_search(int alpha, int beta, int depth, Stack* ss);
 
     /**
      * @brief Quiescence search to resolve tactical sequences
@@ -80,7 +79,7 @@ class Engine {
      * @return Stable position score after capturing sequences
      */
     template<NodeType node>
-    int quiescence_search(int alpha, int beta, int ply);
+    int quiescence_search(int alpha, int beta, Stack* ss);
 
     /**
      * @brief Updates killer moves and history heuristics for a quiet move causing a beta cutoff.
@@ -89,6 +88,17 @@ class Engine {
      * @param depth The search depth used for the history bonus calculation.
      */
     void update_quiet_heuristics(Move move, int ply, int depth);
+
+    /**
+     * @brief Gets the reduction for Late Move Reduction (LMR)
+     * @param depth Current search depth
+     * @param movecount Number of moves considered
+     * @param improving Boolean indicating if the search is improving
+     * @param is_pv_node Boolean indicating if the current node is a principal variation node
+     * @param is_capture Boolean indicating if the move is a capture
+     * @return Calculated reduction value
+     */
+    int get_reduction(int depth, int movecount, bool improving, bool is_pv_node, bool is_capture);
 
     // Time management functions
     /**

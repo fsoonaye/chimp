@@ -19,11 +19,17 @@ Move Engine::iterative_deepening(int max_depth) {
     Move bestmove = Move::NO_MOVE;
     init_tables();
 
+    // STACK INITIALIZATION
+    Stack  stack[MAX_PLY + 4] = {};
+    Stack* ss                 = stack + 2;
+    for (int i = 0; i < MAX_PLY + 1; i++)
+        (ss + i)->ply = i;
+
     // ITERATIVE DEEPENING LOOP
     for (int depth = 1; depth <= max_depth; depth++)
     {
         int prevscore = score;
-        score         = aspiration_window_search(depth, prevscore);
+        score         = aspiration_window_search(depth, prevscore, ss);
         bestmove      = pv_table[0][0];
 
         // TIME CHECK
@@ -40,7 +46,7 @@ Move Engine::iterative_deepening(int max_depth) {
 }
 
 
-int Engine::aspiration_window_search(int depth, int prevscore) {
+int Engine::aspiration_window_search(int depth, int prevscore, Stack* ss) {
     // SEARCH INITIALIZATION
     int score = -VALUE_INF;
     int alpha = -VALUE_INF;
@@ -66,7 +72,7 @@ int Engine::aspiration_window_search(int depth, int prevscore) {
             beta = VALUE_INF;
 
         // SEARCH WITH CURRENT WINDOW
-        score = negamax_search<ROOT>(alpha, beta, depth, 0);
+        score = negamax_search<ROOT>(alpha, beta, depth, ss);
 
         // TIME CHECK
         if (time_is_up())
@@ -93,7 +99,7 @@ int Engine::aspiration_window_search(int depth, int prevscore) {
 }
 
 template<NodeType node>
-int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
+int Engine::negamax_search(int alpha, int beta, int depth, Stack* ss) {
     // TIME CHECK
     if (time_is_up())
         return VALUE_NONE;
@@ -106,7 +112,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
     bool           improving    = false;
 
     // PRINCIPAL VARIATION INITIALIZATION
-    pv_length[ply] = ply;
+    pv_length[ss->ply] = ss->ply;
 
     if (!is_root_node)
     {
@@ -123,12 +129,12 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
                 return 0;
 
             if (result == GameResult::LOSE)
-                return mated_in(ply);
+                return mated_in(ss->ply);
         }
 
         // MATE DISTANCE PRUNING
-        alpha = std::max(alpha, mated_in(ply));
-        beta  = std::min(beta, mate_in(ply + 1));
+        alpha = std::max(alpha, mated_in(ss->ply));
+        beta  = std::min(beta, mate_in(ss->ply + 1));
 
         if (alpha >= beta)
             return alpha;
@@ -140,7 +146,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
 
     // QUIESCENCE SEARCH
     if (depth <= 0)
-        return quiescence_search<node>(alpha, beta, ply);
+        return quiescence_search<node>(alpha, beta, ss);
 
     // TRANSPOSITION TABLE PROBE
     Move     ttmove  = Move::NO_MOVE;
@@ -174,43 +180,44 @@ int Engine::negamax_search(int alpha, int beta, int depth, int ply) {
 
     // QUIESCENCE SEARCH
     if (depth <= 0)
-        return quiescence_search<node>(alpha, beta, ply);
+        return quiescence_search<node>(alpha, beta, ss);
 
     // avoid pruning too aggressively for in check nodes
     if (is_in_check)
+    {
+        ss->eval = -VALUE_INF;
         goto moveloop;
+    }
 
     // STATIC BOARD EVALUATION
-    search_info[ply].eval = tthit ? ttscore : evaluate(board);
+    ss->eval = tthit ? ttscore : evaluate(board);
 
-    if (ply > 2)
-        improving = search_info[ply - 2].eval != VALUE_NONE
-                 && search_info[ply - 2].eval < search_info[ply].eval;
+    if (ss->ply > 2)
+        improving = (ss - 2)->eval != VALUE_NONE && (ss - 2)->eval < ss->eval;
 
     // avoid pruning too aggressively for pv nodes
     if (is_pv_node)
         goto moveloop;
 
     // RAZORING
-    if (depth < 3 && search_info[ply].eval + 150 < alpha)
-        return quiescence_search<CUT>(alpha, beta, ply);
+    if (depth < 3 && ss->eval + 150 < alpha)
+        return quiescence_search<CUT>(alpha, beta, ss);
 
     // REVERSE FUTILITY PRUNING (RFP)
     if (ttmove != Move::NO_MOVE && !board.isCapture(ttmove))
     {
         const int margin = 150 * depth;
 
-        if (search_info[ply].eval >= beta + margin)
-            return search_info[ply].eval;
+        if (ss->eval >= beta + margin)
+            return ss->eval;
     }
 
     // NULL MOVE PRUNING (NMP)
-    if (depth >= 3 && search_info[ply].eval >= beta && search_info[ply].currmove != Move::NO_MOVE)
+    if (depth >= 3 && ss->eval >= beta && ss->currmove != Move::NO_MOVE)
     {
-        const int reduction =
-          5 + std::min(4, depth / 5) + std::min(3, (search_info[ply].eval - beta) / 200);
+        const int reduction = 5 + std::min(4, depth / 5) + std::min(3, (ss->eval - beta) / 200);
         board.makeNullMove();
-        int nullmove_score = -negamax_search<CUT>(-beta, -beta + 1, depth - reduction, ply + 1);
+        int nullmove_score = -negamax_search<CUT>(-beta, -beta + 1, depth - reduction, ss + 1);
         board.unmakeNullMove();
 
         if (nullmove_score >= beta)
@@ -229,36 +236,61 @@ moveloop:
     Movelist moves;
     movegen::legalmoves(moves, board);
 
-    MovePicker mp(*this, moves, ttmove, ply);
+    MovePicker mp(*this, moves, ttmove, ss->ply);
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
         movecount++;
-        const bool is_capture = board.isCapture(move);
-        const int  new_depth  = depth - 1;
+
+        // MOVE CLASSIFICATION
+        const bool is_capture   = board.isCapture(move);
+        const bool is_promotion = move.typeOf() == Move::PROMOTION;
+        const bool gives_check  = board.givesCheck(move) != CheckType::NO_CHECK;
+
+        const int new_depth = depth - 1;
+
+        const int reduction = get_reduction(depth, movecount, improving, is_pv_node, is_capture);
+
+        // if (!is_root_node && bestscore > VALUE_MATED_IN_PLY)
+        // {
+
+        //     int lmr_depth = new_depth - reduction;
+
+        //     if (gives_check || is_capture)
+        //     {
+        //         Piece captured_piece = board.at(move.to());
+
+        //         // FUTILITY PRUNING
+        //         if (!gives_check && lmr_depth < 7 && !is_in_check)
+        //         {
+        //             int futility_score = ss->eval + 200 * lmr_depth;
+
+        //             if (futility_score <= alpha)
+        //                 continue;
+        //         }
+        //     }
+        // }
 
         nodes++;
         board.makeMove(move);
-        search_info[ply].currmove = move;
+        ss->currmove = move;
 
         // LATE MOVE REDUCTION (LMR)
         // clang-format off
         const bool do_lmr = depth >= 3
                          && movecount > 3 + 2 * is_pv_node
                          && !is_in_check
-                         && move.typeOf() != Move::PROMOTION
-                         && move != killer_moves[ply][0]
-                         && move != killer_moves[ply][1];
+                         && !is_promotion
+                         && move != killer_moves[ss->ply][0]
+                         && move != killer_moves[ss->ply][1];
         // clang-format on
 
         bool do_null_window_search_at_full_depth;
         if (do_lmr)
         {
             // Calculate reduced search depth for LMR
-            const int reduction =
-              reduction_table[depth][movecount] + improving - is_pv_node - is_capture;
             const int reduced_depth = std::clamp(new_depth - reduction, 1, new_depth + 1);
 
-            score = -negamax_search<CUT>(-alpha - 1, -alpha, reduced_depth, ply + 1);
+            score = -negamax_search<CUT>(-alpha - 1, -alpha, reduced_depth, ss + 1);
 
             // Only do null window search at full depth if the reduced search beats alpha
             // and we actually reduced the depth (to avoid doing the same search twice)
@@ -268,14 +300,14 @@ moveloop:
             do_null_window_search_at_full_depth = is_cut_node || movecount > 1;
 
         if (do_null_window_search_at_full_depth)
-            score = -negamax_search<CUT>(-alpha - 1, -alpha, new_depth, ply + 1);
+            score = -negamax_search<CUT>(-alpha - 1, -alpha, new_depth, ss + 1);
 
         // PRINCIPAL VARIATION SEARCH (PVS)
         // For PV nodes, we do a full window search at full depth in two cases:
         // 1. First move of the node
         // 2. The score falls within the alpha-beta window
         if (is_pv_node && ((score > alpha && score < beta) || movecount == 1))
-            score = -negamax_search<PV>(-beta, -alpha, new_depth, ply + 1);
+            score = -negamax_search<PV>(-beta, -alpha, new_depth, ss + 1);
 
         board.unmakeMove(move);
 
@@ -296,10 +328,10 @@ moveloop:
                 bestmove = move;
 
                 // PRINCIPAL VARIATION UPDATE
-                pv_table[ply][ply] = move;
-                for (int nextply = ply + 1; nextply < pv_length[ply + 1]; nextply++)
-                    pv_table[ply][nextply] = pv_table[ply + 1][nextply];
-                pv_length[ply] = pv_length[ply + 1];
+                pv_table[ss->ply][ss->ply] = move;
+                for (int nextply = ss->ply + 1; nextply < pv_length[ss->ply + 1]; nextply++)
+                    pv_table[ss->ply][nextply] = pv_table[ss->ply + 1][nextply];
+                pv_length[ss->ply] = pv_length[ss->ply + 1];
             }
         }
 
@@ -308,7 +340,7 @@ moveloop:
         {
             // KILLER & HISTORY UPDATES
             if (!is_capture)
-                update_quiet_heuristics(move, ply, depth);
+                update_quiet_heuristics(move, ss->ply, depth);
 
             break;
         }
@@ -316,7 +348,7 @@ moveloop:
 
     // CHECKMATE/STALEMATE DETECTION
     if (movecount == 0)
-        return board.inCheck() ? mated_in(ply) : 0;
+        return board.inCheck() ? mated_in(ss->ply) : 0;
 
     // TRANSPOSITION TABLE STORE
     const Bound bound = bestscore >= beta                         ? BOUND_LOWER
@@ -328,13 +360,13 @@ moveloop:
 }
 
 template<NodeType node>
-int Engine::quiescence_search(int alpha, int beta, int ply) {
+int Engine::quiescence_search(int alpha, int beta, Stack* ss) {
     // TIME CHECK
     if (time_is_up())
         return VALUE_NONE;
 
     // MAX DEPTH CHECK
-    if (ply >= MAX_PLY)
+    if (ss->ply >= MAX_PLY)
         return evaluate(board);
 
     // NODE CLASSIFICATION
@@ -380,7 +412,7 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
     Movelist moves;
     movegen::legalmoves<movegen::MoveGenType::CAPTURE>(moves, board);
 
-    MovePicker mp(*this, moves, ttmove, ply);
+    MovePicker mp(*this, moves, ttmove, ss->ply);
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
         // STATIC EXCHANGE EVALUATION (SEE) PRUNING
@@ -389,7 +421,7 @@ int Engine::quiescence_search(int alpha, int beta, int ply) {
 
         nodes++;
         board.makeMove(move);
-        score = -quiescence_search<node>(-beta, -alpha, ply + 1);
+        score = -quiescence_search<node>(-beta, -alpha, ss + 1);
         board.unmakeMove(move);
 
         // If search has ended prematurely, return immediately without updating anything
