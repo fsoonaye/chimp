@@ -227,10 +227,11 @@ int Engine::negamax_search(int alpha, int beta, int depth, Stack* ss) {
 moveloop:
     // MOVE LOOP INITIALIZATION
     int  score;
-    int  bestscore = -VALUE_INF;
-    int  movecount = 0;
-    Move bestmove  = Move::NO_MOVE;
-    Move move      = Move::NO_MOVE;
+    int  bestscore  = -VALUE_INF;
+    int  movecount  = 0;
+    int  quietcount = 0;
+    Move bestmove   = Move::NO_MOVE;
+    Move move       = Move::NO_MOVE;
 
     // MOVE GENERATION AND ORDERING
     Movelist moves;
@@ -239,16 +240,29 @@ moveloop:
     MovePicker mp(*this, moves, ttmove, ss->ply);
     while ((move = mp.next_move()) != Move::NO_MOVE)
     {
-        movecount++;
-
         // MOVE CLASSIFICATION
         const bool is_capture   = board.isCapture(move);
         const bool is_promotion = move.typeOf() == Move::PROMOTION;
         const bool gives_check  = board.givesCheck(move) != CheckType::NO_CHECK;
+        const bool is_quiet     = !is_capture && !is_promotion && !gives_check;
 
+        // MOVE COUNT UPDATE
+        movecount++;
+        quietcount += is_quiet;
+
+        // NEW DEPTH COMPUTATION
         const int new_depth = depth - 1;
-
         const int reduction = get_reduction(depth, movecount, improving, is_pv_node, is_capture);
+
+        if (!is_root_node && bestscore > VALUE_MATED_IN_PLY)
+        {
+            if (is_quiet)
+            {
+                // LATE MOVE PRUNING (LMP)
+                if (!is_in_check && is_cut_node && depth <= 5 && quietcount > (4 + depth * depth))
+                    continue;
+            }
+        }
 
         // if (!is_root_node && bestscore > VALUE_MATED_IN_PLY)
         // {
