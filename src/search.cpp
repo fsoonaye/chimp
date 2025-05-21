@@ -254,12 +254,22 @@ moveloop:
         const int new_depth = depth - 1;
         const int reduction = get_reduction(depth, movecount, improving, is_pv_node, is_capture);
 
-        if (!is_root_node && bestscore > VALUE_MATED_IN_PLY)
+        if (!is_root_node && !is_loss(beta))
         {
             if (is_quiet)
             {
                 // LATE MOVE PRUNING (LMP)
                 if (!is_in_check && is_cut_node && depth <= 5 && quietcount > (4 + depth * depth))
+                    continue;
+
+                // QUIET SEE PRUNING
+                if (depth <= 6 && !SEE(board, move, -(depth * 90)))
+                    continue;
+            }
+            else
+            {
+                // NOISY SEE PRUNING
+                if (depth <= 5 && !SEE(board, move, -(depth * 90)))
                     continue;
             }
         }
