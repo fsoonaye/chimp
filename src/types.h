@@ -30,21 +30,35 @@ constexpr int MAX_HISTORY_VALUE = 16384;  // Maximum value for an entry in the h
  * @param score Score to check
  * @return True if the score represents a checkmate
  */
-inline bool is_mate(int score) { return std::abs(score) >= VALUE_MATE - MAX_PLY; }
+constexpr bool is_mate(int score) { return std::abs(score) >= VALUE_MATE_IN_PLY; }
+
+/**
+ * @brief Checks if a score indicates a loss
+ * @param score Score to check
+ * @return True if the score represents a loss
+ */
+constexpr bool is_loss(int score) { return score <= VALUE_MATED_IN_PLY; }
+
+/**
+ * @brief Checks if a score indicates a win
+ * @param score Score to check
+ * @return True if the score represents a win
+ */
+constexpr bool is_win(int score) { return score >= VALUE_MATE_IN_PLY; }
 
 /**
  * @brief Calculates a mate score at a specific ply
  * @param ply Distance from root position
  * @return Score indicating checkmate at the given ply
  */
-inline int mate_in(int ply) { return VALUE_MATE - ply; }
+constexpr int mate_in(int ply) { return VALUE_MATE - ply; }
 
 /**
  * @brief Calculates a mated score at a specific ply
  * @param ply Distance from root position
  * @return Score indicating being checkmated at the given ply
  */
-inline int mated_in(int ply) { return ply - VALUE_MATE; }
+constexpr int mated_in(int ply) { return ply - VALUE_MATE; }
 
 /**
  * @enum Bound
