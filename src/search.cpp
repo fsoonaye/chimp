@@ -200,20 +200,15 @@ int Engine::negamax_search(int alpha, int beta, int depth, Stack* ss) {
         goto moveloop;
 
     // RAZORING
-    if (depth < 3 && ss->eval + 150 < alpha)
+    if (depth <= 2 && ss->eval + 150 < alpha)
         return quiescence_search<CUT>(alpha, beta, ss);
 
     // REVERSE FUTILITY PRUNING (RFP)
-    if (ttmove != Move::NO_MOVE && !board.isCapture(ttmove))
-    {
-        const int margin = 150 * depth;
-
-        if (ss->eval >= beta + margin)
-            return ss->eval;
-    }
+    if (depth <= 8 && !is_mate(beta) && ss->eval - 70 * (depth - improving) >= beta)
+        return beta;
 
     // NULL MOVE PRUNING (NMP)
-    if (depth >= 3 && ss->eval >= beta && ss->currmove != Move::NO_MOVE)
+    if (depth >= 3 && ss->currmove != Move::NO_MOVE && ss->eval >= beta)
     {
         const int reduction = 5 + std::min(4, depth / 5) + std::min(3, (ss->eval - beta) / 200);
         board.makeNullMove();
@@ -221,7 +216,7 @@ int Engine::negamax_search(int alpha, int beta, int depth, Stack* ss) {
         board.unmakeNullMove();
 
         if (nullmove_score >= beta)
-            return nullmove_score >= VALUE_MATE_IN_PLY ? beta : nullmove_score;
+            return is_win(nullmove_score) ? beta : nullmove_score;
     }
 
 moveloop:
