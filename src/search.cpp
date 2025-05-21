@@ -254,7 +254,7 @@ moveloop:
         const int new_depth = depth - 1;
         const int reduction = get_reduction(depth, movecount, improving, is_pv_node, is_capture);
 
-        if (!is_root_node && !is_loss(beta))
+        if (!is_root_node && !is_loss(bestscore))
         {
             if (is_quiet)
             {
