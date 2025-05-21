@@ -13,7 +13,7 @@ namespace bench {
  *
  * @param depth The search depth to use for benchmarking
  */
-void run(int depth = 12);
+void run(int depth = 15);
 
 // fens from Stormphrax, ultimately from bitgenie
 static const std::array<std::string, 50> benchfens{
