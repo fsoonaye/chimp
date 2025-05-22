@@ -243,8 +243,9 @@ moveloop:
         // MOVE CLASSIFICATION
         const bool is_capture   = board.isCapture(move);
         const bool is_promotion = move.typeOf() == Move::PROMOTION;
-        const bool gives_check  = board.givesCheck(move) != CheckType::NO_CHECK;
-        const bool is_quiet     = !is_capture && !is_promotion && !gives_check;
+        // const bool gives_check  = board.givesCheck(move) != CheckType::NO_CHECK;
+        // const bool is_quiet     = !is_capture && !is_promotion && !gives_check;
+        const bool is_quiet = !is_capture && !is_promotion;
 
         // MOVE COUNT UPDATE
         movecount++;
@@ -266,12 +267,12 @@ moveloop:
                 if (depth <= 6 && !SEE(board, move, -(depth * 90)))
                     continue;
             }
-            else
-            {
-                // NOISY SEE PRUNING
-                if (depth <= 5 && !SEE(board, move, -(depth * 90)))
-                    continue;
-            }
+            // else
+            // {
+            //     // NOISY SEE PRUNING
+            //     if (depth <= 5 && !SEE(board, move, -(depth * 90)))
+            //         continue;
+            // }
         }
 
         // if (!is_root_node && bestscore > VALUE_MATED_IN_PLY)
