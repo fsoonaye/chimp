@@ -77,15 +77,6 @@ struct Limits {
     bool     isInfinite = false;  // not handled yet
 };
 
-/**
- * @struct SearchInfo
- * @brief Stores search information for each ply during negamax
- */
-struct SearchInfo {
-    Move currmove = Move::NO_MOVE;  ///< Current move being searched
-    int  eval     = VALUE_NONE;     ///< Static evaluation at this position
-};
-
 struct Stack {
     int      eval        = VALUE_NONE;
     int      movecount   = 0;
