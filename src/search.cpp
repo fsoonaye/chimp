@@ -342,10 +342,7 @@ moveloop:
                 bestmove = move;
 
                 // PRINCIPAL VARIATION UPDATE
-                pv_table[ss->ply][ss->ply] = move;
-                for (int nextply = ss->ply + 1; nextply < pv_length[ss->ply + 1]; nextply++)
-                    pv_table[ss->ply][nextply] = pv_table[ss->ply + 1][nextply];
-                pv_length[ss->ply] = pv_length[ss->ply + 1];
+                update_pv(move, ss->ply);
             }
         }
 

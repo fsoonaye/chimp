@@ -17,11 +17,6 @@ void Engine::update_quiet_heuristics(Move move, int ply, int depth) {
         killer_moves[ply][0] = move;
     }
 
-    // COUNTER MOVE UPDATE
-    if (ply > 0)
-        counter_moves[search_info[ply - 1].currmove.from().index()]
-                     [search_info[ply - 1].currmove.to().index()] = move;
-
     // HISTORY HEURISTICS UPDATE
     int& entry = history_table[board.sideToMove()][move.from().index()][move.to().index()];
     int  bonus = depth * depth;
@@ -30,9 +25,11 @@ void Engine::update_quiet_heuristics(Move move, int ply, int depth) {
     entry += clamped_bonus - entry * clamped_bonus / MAX_HISTORY_VALUE;
 }
 
-int Engine::get_reduction(
-  int depth, int movecount, bool improving, bool is_pv_node, bool is_capture) {
-    return reduction_table[depth][movecount] + improving - is_pv_node - is_capture;
+void Engine::update_pv(Move move, int ply) {
+    pv_table[ply][ply] = move;
+    for (int nextply = ply + 1; nextply < pv_length[ply + 1]; nextply++)
+        pv_table[ply][nextply] = pv_table[ply + 1][nextply];
+    pv_length[ply] = pv_length[ply + 1];
 }
 
 bool Engine::time_is_up() {
@@ -131,9 +128,6 @@ void Engine::init_tables() {
 
     // Initialize counter moves table
     std::fill(&counter_moves[0][0], &counter_moves[0][0] + 64 * 64, Move::NO_MOVE);
-
-    // Initialize search information table
-    std::fill(search_info, search_info + MAX_PLY + 4, SearchInfo());
 
     // Initialize late move reduction table
     for (int depth = 1; depth < MAX_PLY; ++depth)
