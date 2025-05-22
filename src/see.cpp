@@ -6,13 +6,13 @@ bool SEE(Board board, Move move, int treshold) {
     Square      from            = move.from();
     const Color initiating_side = board.at<Piece>(from).color();
 
-    int exchange_value = SEEvalues[board.at<PieceType>(to)] - treshold;
+    int exchange_value = SEE_VALUES[board.at<PieceType>(to)] - treshold;
 
     // If even before subtracting our own piece's cost, the exchange is losing, then refuse
     if (exchange_value < 0)
         return false;
 
-    exchange_value -= SEEvalues[board.at<PieceType>(from)];
+    exchange_value -= SEE_VALUES[board.at<PieceType>(from)];
 
     // If the exchange is still winning after this capture, then accept
     if (exchange_value >= 0)
@@ -65,7 +65,7 @@ bool SEE(Board board, Move move, int treshold) {
         side = ~side;
 
         // Negamax the exchange value
-        exchange_value = -exchange_value - 1 - SEEvalues[pt];
+        exchange_value = -exchange_value - 1 - SEE_VALUES_TUNED[pt];
 
         // if the new exchange value indicates a winning net results, then accept
         if (exchange_value >= 0)

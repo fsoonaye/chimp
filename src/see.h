@@ -22,6 +22,7 @@ bool SEE(Board board, Move move, int threshold);
  * @brief Material values used for Static Exchange Evaluation
  * 
  * Material values for each piece type used specifically in SEE calculations.
- * Values are inspired from weiss for now.
+ * Values are inspired from Smallbrain for now.
  */
-static constexpr int SEEvalues[7] = {100, 450, 460, 650, 1250, 0, 0};
+static constexpr int16_t SEE_VALUES[7]       = {100, 320, 330, 500, 900, 0, 0};
+static constexpr int16_t SEE_VALUES_TUNED[7] = {98, 337, 365, 477, 1025, 0, 0};
