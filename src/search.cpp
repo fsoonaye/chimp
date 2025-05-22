@@ -252,7 +252,7 @@ moveloop:
 
         // NEW DEPTH COMPUTATION
         const int new_depth = depth - 1;
-        const int reduction = get_reduction(depth, movecount, improving, is_pv_node, is_capture);
+        int       reduction = reduction_table[is_quiet][depth][movecount];
 
         if (!is_root_node && bestscore > VALUE_MATED_IN_PLY)
         {
@@ -292,16 +292,16 @@ moveloop:
         // clang-format off
         const bool do_lmr = depth >= 3
                          && movecount > 3 + 2 * is_pv_node
-                         && !is_in_check
-                         && !is_promotion
-                         && move != killer_moves[ss->ply][0]
-                         && move != killer_moves[ss->ply][1];
+                         && !is_in_check;
         // clang-format on
 
         bool do_null_window_search_at_full_depth;
         if (do_lmr)
         {
             // Calculate reduced search depth for LMR
+            reduction += improving;
+            reduction -= is_pv_node;
+            reduction -= is_capture;
             const int reduced_depth = std::clamp(new_depth - reduction, 1, new_depth + 1);
 
             score = -negamax_search<CUT>(-alpha - 1, -alpha, reduced_depth, ss + 1);
@@ -359,7 +359,7 @@ moveloop:
 
     // CHECKMATE/STALEMATE DETECTION
     if (movecount == 0)
-        return board.inCheck() ? mated_in(ss->ply) : 0;
+        return is_in_check ? mated_in(ss->ply) : 0;
 
     // TRANSPOSITION TABLE STORE
     const Bound bound = bestscore >= beta                         ? BOUND_LOWER

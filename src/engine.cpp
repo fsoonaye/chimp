@@ -131,7 +131,16 @@ void Engine::init_tables() {
 
     // Initialize late move reduction table
     for (int depth = 1; depth < MAX_PLY; ++depth)
+    {
         for (int movecount = 1; movecount < MAX_MOVES; ++movecount)
-            reduction_table[depth][movecount] =
-              1 + static_cast<int>(std::log(depth) * std::log(movecount) / 2.25);
+        {
+            // Quiet moves
+            reduction_table[1][depth][movecount] =
+              1.35 + static_cast<int>(std::log(depth) * std::log(movecount) / 2.75);
+
+            // Noisy moves
+            reduction_table[0][depth][movecount] =
+              0.2 + static_cast<int>(std::log(depth) * std::log(movecount) / 3.35);
+        }
+    }
 }

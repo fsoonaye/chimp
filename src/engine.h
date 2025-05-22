@@ -90,6 +90,13 @@ class Engine {
     void update_quiet_heuristics(Move move, int ply, int depth);
 
     /**
+     * @brief Updates the principal variation table
+     * @param move The move to update the principal variation with
+     * @param ply The current ply in the search
+     */
+    void update_pv(Move move, int ply);
+
+    /**
      * @brief Gets the reduction for Late Move Reduction (LMR)
      * @param depth Current search depth
      * @param movecount Number of moves considered
@@ -150,13 +157,12 @@ class Engine {
     void init_tables();
 
     // Search tables
-    int        history_table[NUM_COLORS][BOARD_SIZE][BOARD_SIZE];
-    int        reduction_table[MAX_PLY][MAX_MOVES];
-    int        pv_length[MAX_PLY];
-    Move       pv_table[MAX_PLY][MAX_PLY];
-    Move       killer_moves[MAX_PLY][NUM_KILLERS];
-    Move       counter_moves[BOARD_SIZE][BOARD_SIZE];
-    SearchInfo search_info[MAX_PLY + 4];
+    int  history_table[NUM_COLORS][BOARD_SIZE][BOARD_SIZE];
+    int  reduction_table[2][MAX_PLY][MAX_MOVES];
+    int  pv_length[MAX_PLY];
+    Move pv_table[MAX_PLY][MAX_PLY];
+    Move killer_moves[MAX_PLY][NUM_KILLERS];
+    Move counter_moves[BOARD_SIZE][BOARD_SIZE];
 
     // Search statistics and state
     // Total nodes searched
