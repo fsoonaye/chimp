@@ -150,13 +150,12 @@ class Engine {
     void init_tables();
 
     // Search tables
-    int        history_table[NUM_COLORS][BOARD_SIZE][BOARD_SIZE];
-    int        reduction_table[MAX_PLY][MAX_MOVES];
-    int        pv_length[MAX_PLY];
-    Move       pv_table[MAX_PLY][MAX_PLY];
-    Move       killer_moves[MAX_PLY][NUM_KILLERS];
-    Move       counter_moves[BOARD_SIZE][BOARD_SIZE];
-    SearchInfo search_info[MAX_PLY + 4];
+    int  history_table[NUM_COLORS][BOARD_SIZE][BOARD_SIZE];
+    int  reduction_table[MAX_PLY][MAX_MOVES];
+    int  pv_length[MAX_PLY];
+    Move pv_table[MAX_PLY][MAX_PLY];
+    Move killer_moves[MAX_PLY][NUM_KILLERS];
+    Move counter_moves[BOARD_SIZE][BOARD_SIZE];
 
     // Search statistics and state
     // Total nodes searched
