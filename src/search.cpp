@@ -263,13 +263,13 @@ moveloop:
                     continue;
 
                 // QUIET SEE PRUNING
-                if (depth <= 6 && !SEE(board, move, -(depth * 92)))
+                if (depth <= 6 && !SEE(board, move, -(depth * 90)))
                     continue;
             }
             else
             {
                 // NOISY SEE PRUNING
-                if (depth <= 5 && !SEE(board, move, -(depth * 93)))
+                if (depth <= 5 && !SEE(board, move, -(depth * 90)))
                     continue;
             }
         }

@@ -65,7 +65,7 @@ bool SEE(Board board, Move move, int treshold) {
         side = ~side;
 
         // Negamax the exchange value
-        exchange_value = -exchange_value - 1 - SEE_VALUES_TUNED[pt];
+        exchange_value = -exchange_value - 1 - SEE_VALUES[pt];
 
         // if the new exchange value indicates a winning net results, then accept
         if (exchange_value >= 0)
