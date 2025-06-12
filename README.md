@@ -1,6 +1,6 @@
 # ♟️🐒 Chimp
 
-Chimp is a UCI-compatible chess engine following a depth-first search approach.
+Chimp is a UCI-compatible chess engine following a depth-first search approach. It sits at ~2500 elo in its edge build.
 
 Meaning, given a chess position (the root), it generates a move tree and explores as far as possible along each branch before backtracking. The engine searches for the best move to play amongst the root's children, using optimization techniques to efficiently prune branches that are unlikely to lead to favorable outcomes.
 
